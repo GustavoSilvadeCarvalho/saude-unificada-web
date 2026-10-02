@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { homePathFor, useAuth } from '../../contexts/AuthContext'
 import { ButtonLink } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 import { Logo } from './Logo'
@@ -13,8 +14,8 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
-  const user = null as { role: string } | null
-  const panelLink = '/login'
+  const { user } = useAuth()
+  const panelLink = user ? homePathFor(user.role) : '/login'
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
