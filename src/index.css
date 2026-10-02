@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Paleta do tema saúde: azul-petróleo (primária) e verde-água (secundária) */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-brand-50: #ecfeff;
+  --color-brand-100: #cffafe;
+  --color-brand-200: #a5f3fc;
+  --color-brand-500: #06b6d4;
+  --color-brand-600: #0891b2;
+  --color-brand-700: #0e7490;
+  --color-brand-800: #155e75;
+  --color-brand-900: #164e63;
+  --color-mint-50: #f0fdfa;
+  --color-mint-100: #ccfbf1;
+  --color-mint-500: #14b8a6;
+  --color-mint-600: #0d9488;
+  --color-mint-700: #0f766e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+/* Foco visível e consistente para navegação por teclado */
+:focus-visible {
+  outline: 3px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
