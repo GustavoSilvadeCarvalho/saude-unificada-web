@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import { Chatbot } from './components/Chatbot'
 import { DashboardLayout, type NavItem } from './components/layout/DashboardLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Loading } from './components/ui/Spinner'
@@ -69,6 +70,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Chatbot />
     </AuthProvider>
   )
 }
