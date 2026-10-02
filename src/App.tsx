@@ -1,3 +1,10 @@
+import { Route, Routes } from 'react-router-dom'
+import Home from './pages/Home'
+
 export default function App() {
-  return <h1 className="p-8 text-2xl font-bold text-brand-700">Saúde Unificada</h1>
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+    </Routes>
+  )
 }
