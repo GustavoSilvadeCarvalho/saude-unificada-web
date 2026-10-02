@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { DashboardLayout, type NavItem } from './components/layout/DashboardLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { Loading } from './components/ui/Spinner'
+import { AuthProvider } from './contexts/AuthContext'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
@@ -12,6 +14,9 @@ import MeuRegistro from './pages/medico/MeuRegistro'
 import Prontuario from './pages/medico/Prontuario'
 import RegistrarAtendimento from './pages/medico/RegistrarAtendimento'
 
+// O painel do gestor (com Recharts) é carregado sob demanda para deixar o bundle inicial menor
+const GestorDashboard = lazy(() => import('./pages/gestor/GestorDashboard'))
+
 const DOCTOR_NAV: NavItem[] = [
   { to: '/medico', label: 'Meu registro', icon: 'user', end: true },
   { to: '/medico/proximos', label: 'Próximos atendimentos', icon: 'calendar' },
@@ -19,16 +24,7 @@ const DOCTOR_NAV: NavItem[] = [
   { to: '/medico/buscar', label: 'Buscar paciente', icon: 'search' },
 ]
 
-// Tela provisória até a área do gestor ser implementada
-function PanelPlaceholder() {
-  const { user, logout } = useAuth()
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Olá, {user?.name}</h1>
-      <button className="mt-4 underline" onClick={logout}>Sair</button>
-    </main>
-  )
-}
+const MANAGER_NAV: NavItem[] = [{ to: '/gestor', label: 'Painel regional', icon: 'chart', end: true }]
 
 export default function App() {
   return (
@@ -54,7 +50,23 @@ export default function App() {
           <Route path="paciente/:cpf/atendimento" element={<RegistrarAtendimento />} />
         </Route>
 
-        <Route path="/gestor/*" element={<ProtectedRoute role="gestor"><PanelPlaceholder /></ProtectedRoute>} />
+        <Route
+          path="/gestor"
+          element={
+            <ProtectedRoute role="gestor">
+              <DashboardLayout navItems={MANAGER_NAV} areaLabel="Área do gestor" />
+            </ProtectedRoute>
+          }
+        >
+          <Route
+            index
+            element={
+              <Suspense fallback={<Loading />}>
+                <GestorDashboard />
+              </Suspense>
+            }
+          />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>

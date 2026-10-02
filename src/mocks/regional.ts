@@ -1,4 +1,5 @@
 import type { RegionalRecord } from '../types'
+import { lastMonths } from '../utils/format'
 
 // Regiões de saúde do estado de SP usadas no painel do gestor
 export const REGIONS = [
@@ -38,15 +39,6 @@ function seededRandom(seed: number) {
     state = (state * 1664525 + 1013904223) % 4294967296
     return state / 4294967296
   }
-}
-
-/** Últimos N meses (incluindo o atual) no formato AAAA-MM */
-export function lastMonths(count = 12): string[] {
-  const now = new Date()
-  return Array.from({ length: count }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })
 }
 
 function buildRegionalData(): RegionalRecord[] {
