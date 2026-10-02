@@ -45,11 +45,11 @@ export function generateId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 }
 
-/** Últimos N meses (incluindo o atual) no formato AAAA-MM */
+/** Últimos N meses completos (sem o mês atual, ainda em andamento) no formato AAAA-MM */
 export function lastMonths(count = 12): string[] {
   const now = new Date()
   return Array.from({ length: count }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1)
+    const d = new Date(now.getFullYear(), now.getMonth() - (count - i), 1)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
 }
