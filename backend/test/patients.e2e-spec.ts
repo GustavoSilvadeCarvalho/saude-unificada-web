@@ -48,7 +48,6 @@ describe('Pacientes', () => {
         sex: 'F',
         bloodType: 'O-',
         region: 'Grande São Paulo',
-        appointmentSummaries: [],
       })
       expect(res.body.allergies).toHaveLength(2)
       expect(res.body.allergies[0]).toMatchObject({ substance: 'Penicilina', severity: 'grave', reaction: 'Anafilaxia' })
@@ -56,6 +55,25 @@ describe('Pacientes', () => {
       expect(res.body.procedures).toHaveLength(2)
       expect(res.body.exams).toHaveLength(3)
       expect(res.body.clinicalConditions).toHaveLength(3)
+    })
+
+    it('traz o resumo dos atendimentos realizados, com a especialidade do médico', async () => {
+      const res = await ctx.api().get(`/api/patients/${SEED_CPFS.maria}`).set(auth(medico))
+
+      // A Maria tem 1 atendimento realizado e 1 agendado no seed: só o realizado entra no resumo
+      expect(res.body.appointmentSummaries).toHaveLength(1)
+      expect(res.body.appointmentSummaries[0]).toMatchObject({
+        doctorName: 'Dr. Rafael Moreira Lima',
+        specialty: 'Clínica Médica',
+        summary: expect.stringContaining('PA 132/84 mmHg'),
+      })
+      expect(typeof res.body.appointmentSummaries[0].appointmentId).toBe('string')
+    })
+
+    it('resumo vazio para quem só tem agendamento', async () => {
+      const res = await ctx.api().get(`/api/patients/${SEED_CPFS.joao}`).set(auth(medico))
+
+      expect(res.body.appointmentSummaries).toEqual([])
     })
 
     it('cada item das listas tem "id" em texto e nenhum campo interno do MongoDB', async () => {
