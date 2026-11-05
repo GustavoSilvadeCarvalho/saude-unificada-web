@@ -25,6 +25,8 @@ export interface ApiStackProps extends cdk.StackProps {
   corsOrigins: string
   /** Fargate Spot (~70% mais barato, pode ser interrompido) em vez do Fargate normal */
   useSpot: boolean
+  /** Limite de tentativas de login ligado; desligar só durante o teste de carga */
+  loginRateLimit: boolean
 }
 
 /**
@@ -88,6 +90,10 @@ export class ApiStack extends cdk.Stack {
         STORAGE_DRIVER: 's3',
         S3_BUCKET: props.documentsBucket.bucketName,
         AWS_REGION: this.region,
+        // CloudFront + ALB: o IP do cliente é o 2º endereço a partir do fim do X-Forwarded-For
+        TRUST_PROXY: '2',
+        LOGIN_RATE_LIMIT: props.loginRateLimit ? '5' : '0',
+        LOGIN_RATE_LIMIT_IP: props.loginRateLimit ? '30' : '0',
       },
       secrets: {
         MONGODB_URI: ecs.Secret.fromSsmParameter(

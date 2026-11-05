@@ -10,7 +10,7 @@ import { ApiStack } from '../lib/api-stack.js'
 import { SCALING, SSM_PARAMS } from '../lib/config.js'
 import { DataStack } from '../lib/data-stack.js'
 
-function build({ useSpot = true, alertEmail = 'alertas@exemplo.com' } = {}) {
+function build({ useSpot = true, loginRateLimit = true, alertEmail = 'alertas@exemplo.com' } = {}) {
   const app = new cdk.App({ context: { '@aws-cdk/core:defaultCrossStackReferences': 'strong' } })
   const env = { account: '123456789012', region: 'us-east-1' }
   const data = new DataStack(app, 'Data', { env, alertEmail, budgetUsd: 18 })
@@ -20,6 +20,7 @@ function build({ useSpot = true, alertEmail = 'alertas@exemplo.com' } = {}) {
     alertsTopic: data.alertsTopic,
     corsOrigins: 'https://saude.vercel.app',
     useSpot,
+    loginRateLimit,
   })
   return { data: Template.fromStack(data), api: Template.fromStack(api) }
 }
@@ -69,7 +70,27 @@ describe('Custo', () => {
   })
 })
 
+/** Variáveis de ambiente do contêiner da API, como objeto */
+function containerEnv(template: Template): Record<string, string> {
+  const [taskDef] = Object.values(template.findResources('AWS::ECS::TaskDefinition'))
+  const vars = taskDef.Properties.ContainerDefinitions[0].Environment as { Name: string; Value: string }[]
+  return Object.fromEntries(vars.map((v) => [v.Name, v.Value]))
+}
+
 describe('Segurança', () => {
+  it('a API confia nos 2 proxies da frente (CloudFront + ALB) para achar o IP do cliente', () => {
+    assert.equal(containerEnv(api).TRUST_PROXY, '2')
+  })
+
+  it('liga o limite de tentativas de login e só desliga para o teste de carga', () => {
+    assert.equal(containerEnv(api).LOGIN_RATE_LIMIT, '5')
+    assert.equal(containerEnv(api).LOGIN_RATE_LIMIT_IP, '30')
+
+    const { api: loadTest } = build({ loginRateLimit: false })
+    assert.equal(containerEnv(loadTest).LOGIN_RATE_LIMIT, '0')
+    assert.equal(containerEnv(loadTest).LOGIN_RATE_LIMIT_IP, '0')
+  })
+
   it('bucket privado, criptografado e só com HTTPS', () => {
     data.hasResourceProperties('AWS::S3::Bucket', {
       PublicAccessBlockConfiguration: {

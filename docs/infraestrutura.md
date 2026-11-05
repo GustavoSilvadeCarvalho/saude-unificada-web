@@ -133,7 +133,11 @@ node backend/scripts/smoke-test.mjs https://dxxxxxxxx.cloudfront.net   # 9 verif
 ## Demonstrar a escalabilidade
 
 1. Abra o dashboard (`DashboardUrl`): gráficos de **tarefas saudáveis**, **CPU**, **requisições**, **tempo de resposta** e **erros**.
-2. Rode a carga no login (o bcrypt gasta CPU e faz só 1 leitura no banco, sem estourar o Atlas gratuito):
+2. Desligue o limite de tentativas de login, senão a carga (muitos logins seguidos do mesmo IP) leva 429 em vez de exercitar a CPU:
+   ```powershell
+   cd infra; npm run deploy:api -- -c loginRateLimit=false; cd ..
+   ```
+   Rode a carga no login (o bcrypt gasta CPU e faz só 1 leitura no banco, sem estourar o Atlas gratuito):
    ```powershell
    node backend/scripts/load-test.mjs https://dxxxxxxxx.cloudfront.net --duracao 600 --usuarios 20 --saida carga-aws.json
    ```
@@ -142,6 +146,7 @@ node backend/scripts/smoke-test.mjs https://dxxxxxxxx.cloudfront.net   # 9 verif
    ```powershell
    aws application-autoscaling describe-scaling-activities --service-namespace ecs --region us-east-1 --max-items 10
    ```
+5. Religue o limite de login: `cd infra; npm run deploy:api; cd ..`.
 
 ## Monitoramento
 

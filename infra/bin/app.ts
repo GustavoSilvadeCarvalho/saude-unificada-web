@@ -28,6 +28,8 @@ new ApiStack(app, 'SaudeUnificadaApi', {
   alertsTopic: data.alertsTopic,
   corsOrigins: String(context('corsOrigins') ?? 'http://localhost:5173'),
   useSpot: String(context('useSpot') ?? 'true') !== 'false',
+  // Só no teste de carga (muitos logins seguidos do mesmo IP): -c loginRateLimit=false
+  loginRateLimit: String(context('loginRateLimit') ?? 'true') !== 'false',
 })
 
 for (const [key, value] of Object.entries(tags)) cdk.Tags.of(app).add(key, value)
