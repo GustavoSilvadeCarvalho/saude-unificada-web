@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable, type PipeTransform } from '@nestjs/common'
-import { isValidCpf, onlyDigits } from './cpf.js'
+import { cpfProblem, normalizeCpf } from './cpf.js'
 
 /**
  * Valida o CPF vindo da URL (ex.: GET /patients/:cpf) e devolve só os dígitos.
- * Aceita com ou sem máscara; responde 400 se os dígitos verificadores não baterem.
+ * Aceita "22916926402" ou "229.169.264-02"; qualquer problema vira 400 com o motivo.
  */
 @Injectable()
 export class ParseCpfPipe implements PipeTransform<string, string> {
   transform(value: string): string {
-    const cpf = onlyDigits(value ?? '')
-    if (!isValidCpf(cpf)) throw new BadRequestException('CPF inválido.')
-    return cpf
+    const problem = cpfProblem(value)
+    if (problem) throw new BadRequestException(problem)
+    return normalizeCpf(value) as string
   }
 }

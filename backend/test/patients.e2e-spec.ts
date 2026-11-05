@@ -1,10 +1,11 @@
+import { CPF_EXAMPLE_MESSAGE } from '../src/common/cpf.js'
 import { SEED_CPFS } from '../src/database/seed-data.js'
 import { createTestApp, type TestContext } from './helpers.js'
 
-// CPF válido que não está no seed (usado para cadastrar)
-const NEW_CPF = '11144477735'
-// CPF com dígito verificador errado
-const INVALID_CPF = '12345678900'
+// CPFs fictícios gerados aleatoriamente (válidos pelas regras, fora do seed)
+const NEW_CPF = '81646027876'
+// Mesmo CPF com o último dígito verificador errado
+const INVALID_CPF = '81646027877'
 
 const newPatient = {
   cpf: NEW_CPF,
@@ -86,11 +87,24 @@ describe('Pacientes', () => {
       expect(res.body).toEqual({ statusCode: 404, message: 'Paciente não encontrado.' })
     })
 
-    it('responde 400 com CPF inválido', async () => {
-      const res = await ctx.api().get(`/api/patients/${INVALID_CPF}`).set(auth(medico))
+    it.each([
+      [INVALID_CPF, 'dígito verificador errado'],
+      ['00000000000', 'todos os dígitos iguais'],
+      ['229169264', 'faltando dígitos'],
+      ['229.16926402', 'máscara pela metade'],
+      ['2291692640a', 'com letra'],
+    ])('responde 400 com CPF inválido: %s (%s)', async (cpf) => {
+      const res = await ctx.api().get(`/api/patients/${cpf}`).set(auth(medico))
 
       expect(res.status).toBe(400)
       expect(res.body.message).toBe('CPF inválido.')
+    })
+
+    it('responde 400 com CPF de exemplo conhecido (ex.: 123.456.789-09)', async () => {
+      const res = await ctx.api().get('/api/patients/12345678909').set(auth(medico))
+
+      expect(res.status).toBe(400)
+      expect(res.body.message).toBe(CPF_EXAMPLE_MESSAGE)
     })
 
     it('responde 403 para o gestor (prontuário é só para médicos)', async () => {
@@ -149,10 +163,10 @@ describe('Pacientes', () => {
         .api()
         .post('/api/patients')
         .set(auth(medico))
-        .send({ ...newPatient, cpf: '529.982.247-25', phone: '', email: '' })
+        .send({ ...newPatient, cpf: '484.594.641-64', phone: '', email: '' })
 
       expect(res.status).toBe(201)
-      expect(res.body.cpf).toBe('52998224725')
+      expect(res.body.cpf).toBe('48459464164')
       expect(res.body).not.toHaveProperty('phone')
       expect(res.body).not.toHaveProperty('email')
     })
@@ -164,7 +178,7 @@ describe('Pacientes', () => {
         .set(auth(medico))
         .send({
           ...newPatient,
-          cpf: '39053344705',
+          cpf: '99311603228',
           allergies: [{ substance: 'Inventada', severity: 'grave', recordedAt: '2020-01-01' }],
         })
 
@@ -174,6 +188,11 @@ describe('Pacientes', () => {
 
     it.each([
       [{ cpf: INVALID_CPF }, 'CPF inválido.'],
+      [{ cpf: '000.000.000-00' }, 'CPF inválido.'],
+      [{ cpf: ' 816 460 278 76' }, 'CPF inválido.'],
+      [{ cpf: 81646027876 }, 'CPF inválido.'],
+      [{ cpf: '111.444.777-35' }, CPF_EXAMPLE_MESSAGE],
+      [{ cpf: '52998224725' }, CPF_EXAMPLE_MESSAGE],
       [{ fullName: '   ' }, 'Informe o nome completo.'],
       [{ birthDate: '10/05/1990' }, 'Data de nascimento inválida. Use o formato AAAA-MM-DD.'],
       [{ birthDate: '2999-01-01' }, 'Data de nascimento inválida. Use o formato AAAA-MM-DD.'],
@@ -187,7 +206,7 @@ describe('Pacientes', () => {
         .api()
         .post('/api/patients')
         .set(auth(medico))
-        .send({ ...newPatient, cpf: '86288366757', ...override })
+        .send({ ...newPatient, cpf: '19475264051', ...override })
 
       expect(res.status).toBe(400)
       expect(res.body.message).toBe(message)
@@ -198,7 +217,7 @@ describe('Pacientes', () => {
         .api()
         .post('/api/patients')
         .set(auth(gestor))
-        .send({ ...newPatient, cpf: '86288366757' })
+        .send({ ...newPatient, cpf: '19475264051' })
 
       expect(res.status).toBe(403)
     })

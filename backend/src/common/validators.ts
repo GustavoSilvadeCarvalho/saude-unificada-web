@@ -1,14 +1,17 @@
 import { ValidateBy, type ValidationOptions } from 'class-validator'
-import { isValidCpf } from './cpf.js'
+import { cpfProblem } from './cpf.js'
 
-/** CPF com dígitos verificadores válidos (use junto com @Digits() para aceitar máscara) */
+/**
+ * CPF aceito pela plataforma: formato, dígitos verificadores e não ser CPF de exemplo
+ * (use junto com @NormalizeCpf() para aceitar a máscara). A mensagem explica o motivo.
+ */
 export function IsCpf(options?: ValidationOptions) {
   return ValidateBy(
     {
       name: 'isCpf',
       validator: {
-        validate: (value) => typeof value === 'string' && isValidCpf(value),
-        defaultMessage: () => 'CPF inválido.',
+        validate: (value) => cpfProblem(value) === null,
+        defaultMessage: (args) => cpfProblem(args?.value) ?? 'CPF inválido.',
       },
     },
     options,

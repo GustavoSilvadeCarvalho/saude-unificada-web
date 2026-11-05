@@ -1,15 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
 import { REGIONS } from '../common/regions.js'
-import { Digits, EmptyToUndefined, Trim } from '../common/transforms.js'
+import { EmptyToUndefined, NormalizeCpf, Trim } from '../common/transforms.js'
 import { IsCpf, IsDateOnly } from '../common/validators.js'
 import { BLOOD_TYPES, type BloodType, SEXES, type Sex } from './patient.constants.js'
 
 // Dados do cadastro. As listas do prontuário (alergias, medicamentos...) começam vazias
 // e só crescem pelos atendimentos: campos extras enviados aqui são descartados (whitelist).
 export class CreatePatientDto {
-  @ApiProperty({ example: '11144477735', description: 'Só dígitos (a máscara 111.444.777-35 também é aceita)' })
-  @Digits()
+  @ApiProperty({
+    example: '81646027876',
+    description:
+      'Só dígitos ou com a máscara 816.460.278-76. Precisa ter dígitos verificadores válidos; CPFs de exemplo conhecidos são recusados.',
+  })
+  @NormalizeCpf()
   @IsCpf()
   cpf: string
 

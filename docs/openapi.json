@@ -168,9 +168,9 @@
             "name": "cpf",
             "required": true,
             "in": "path",
-            "description": "CPF do paciente",
+            "description": "CPF do paciente, só dígitos ou com máscara (229.169.264-02)",
             "schema": {
-              "example": "12345678909",
+              "example": "22916926402",
               "type": "string"
             }
           }
@@ -742,7 +742,7 @@
         "properties": {
           "cpf": {
             "type": "string",
-            "example": "12345678909",
+            "example": "22916926402",
             "description": "Só dígitos"
           },
           "fullName": {
@@ -856,8 +856,8 @@
         "properties": {
           "cpf": {
             "type": "string",
-            "example": "11144477735",
-            "description": "Só dígitos (a máscara 111.444.777-35 também é aceita)"
+            "example": "81646027876",
+            "description": "Só dígitos ou com a máscara 816.460.278-76. Precisa ter dígitos verificadores válidos; CPFs de exemplo conhecidos são recusados."
           },
           "fullName": {
             "type": "string",

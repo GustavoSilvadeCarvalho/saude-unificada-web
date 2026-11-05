@@ -43,7 +43,7 @@ export class PatientsController {
     summary: 'Prontuário unificado do paciente',
     description: 'Busca pelo CPF (com ou sem máscara). O acesso é registrado na auditoria (LGPD).',
   })
-  @ApiParam({ name: 'cpf', example: '12345678909', description: 'CPF do paciente' })
+  @ApiParam({ name: 'cpf', example: '22916926402', description: 'CPF do paciente, só dígitos ou com máscara (229.169.264-02)' })
   @ApiOkResponse({ type: PatientResponse })
   @ApiBadRequestResponse({
     type: ErrorResponse,

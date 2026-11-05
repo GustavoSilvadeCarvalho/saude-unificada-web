@@ -110,7 +110,7 @@ export class AppointmentSummaryResponse {
 }
 
 export class PatientResponse {
-  @ApiProperty({ example: '12345678909', description: 'Só dígitos' })
+  @ApiProperty({ example: '22916926402', description: 'Só dígitos' })
   cpf: string
 
   @ApiProperty({ example: 'Maria Aparecida da Silva' })
