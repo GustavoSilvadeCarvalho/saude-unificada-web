@@ -1,6 +1,7 @@
 # Integração contínua: roda em todo push e pull request.
 #  - API: typecheck, testes (e2e + unitários) com cobertura mínima e relatórios como artefato
 #  - Docker: monta a imagem, sobe API + MongoDB com docker compose e roda o teste de fumaça
+#  - Infra: typecheck, testes das regras da infraestrutura AWS e cdk synth (sem conta AWS)
 #  - Site: build do front-end
 name: CI
 
@@ -109,6 +110,28 @@ jobs:
       - name: Derrubar
         if: always()
         run: docker compose down -v
+
+  infra:
+    name: Infra — testes e synth do CDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # Gera os templates do CloudFormation sem acessar a AWS (não monta a imagem Docker)
+      - run: npm run synth -- --quiet
 
   site:
     name: Site — build
