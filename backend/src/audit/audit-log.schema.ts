@@ -4,7 +4,12 @@ import { USER_ROLES, type UserRole } from '../common/roles.js'
 import { jsonSchemaOptions } from '../common/schema-options.js'
 
 /** Ações registradas na trilha de auditoria */
-export const AUDIT_ACTIONS = ['patient.view', 'patient.create'] as const
+export const AUDIT_ACTIONS = [
+  'patient.view', // abriu o prontuário
+  'patient.create', // cadastrou o paciente
+  'appointments.view', // listou o histórico de atendimentos do paciente
+  'appointment.create', // registrou ou concluiu um atendimento (e atualizou o prontuário)
+] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
 /**
