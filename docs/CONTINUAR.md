@@ -46,9 +46,39 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
   2. rodar os testes;
   3. parar e passar os comandos `git add <arquivos> && git commit -m "..."`.
 - **Quem commita é o Matheus**, não o Claude. O histórico de commits é a trilha de evolução do projeto.
+- **Vários commits pequenos por bloco** (um por parte: seed, rota, Swagger, testes...), não um commitzão.
 - Mensagens de commit em português: `feat(backend): ...`, `test(backend): ...`, `chore(infra): ...`, `docs: ...`.
 - Branch de trabalho: `feat/backend-api`.
+- Pasta local do Matheus: `C:\Users\nepri\Documents\Projeto PI\saude-unificada-web` (o Claude escreve os arquivos ali pela pasta conectada no app desktop).
+- O ambiente do Claude **não consegue baixar o MongoDB** (download bloqueado), então quem roda `npm run dev:memory` e `npm run test:e2e` é o Matheus, no Windows. O Claude roda o `typecheck`.
 - Explicar em português e de forma direta.
+
+## Decisões de infraestrutura e custo (definidas em 05/11)
+
+**Orçamento: no máximo R$ 50 no projeto inteiro (≈ US$ 9). Tudo que puder ser gratuito, é gratuito.**
+
+| O quê | Onde | Custo |
+|---|---|---|
+| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)**, região São Paulo | R$ 0 |
+| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado | centavos |
+| API "no ar" durante a entrega | 1 instância pequena (EC2 com Docker) | ~US$ 5–8 |
+| Teste de escalabilidade | ECS Fargate + ALB com auto scaling 1→3, **ligado só nas rodadas de teste** (~2 h) e destruído com `cdk destroy` | < US$ 1 |
+| Monitoramento | CloudWatch (logs com retenção de 7 dias, 1 dashboard, poucos alarmes) | ~R$ 0 |
+| Site | Vercel | R$ 0 |
+| Plano C | VMs com **OpenStack**, só na reta final e se a AWS não der certo | — |
+
+- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Conferir se ECS/ALB estão liberados no plano Free; se não, usar EC2 + Auto Scaling Group.
+- **Região sa-east-1 (São Paulo)** para API, S3 e Atlas: argumento de LGPD (dados de saúde no Brasil) e menor latência na demo.
+- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública.
+- **Alerta de orçamento (AWS Budgets)** em US$ 3 e US$ 8 no primeiro dia.
+- **Limites do Atlas Free:** 512 MB, 100 operações/s, 500 conexões. O teste de carga mira principalmente o **login** (bcrypt gasta CPU e faz 1 leitura no banco): a CPU da API sobe e dispara o auto scaling sem estourar o limite do Atlas.
+
+## Swagger (documentação viva da API)
+
+- Swagger UI em `/api/docs` e o JSON do OpenAPI em `/api/docs-json`. Liga/desliga com `SWAGGER_ENABLED` (padrão `true`, deixado ligado na demo).
+- **Todo bloco documenta as próprias rotas:** `@ApiTags`, `@ApiOperation`, `@ApiProperty` nos DTOs, classes de resposta e os erros (`@ApiUnauthorizedResponse`, `@ApiForbiddenResponse`, ...), com exemplos iguais ao `API_CONTRACT.md`.
+- `npm run openapi` gera `docs/openapi.json` (sem precisar de banco). Serve como evidência, para importar no Postman/Insomnia e como base dos testes de carga (k6).
+- Na parte de Qualidade, o Swagger entra no plano de testes como ferramenta de **teste exploratório/manual** (com prints em `tests/relatorios/`), e há um teste e2e garantindo que todas as rotas aparecem documentadas.
 
 ## Estado atual (commitado na `feat/backend-api`)
 
@@ -92,6 +122,7 @@ Testado manualmente: a API sobe, o login responde 401/400 com mensagem em portug
   - `id` como string;
   - datas `AAAA-MM-DD` e data/hora em ISO;
   - CPF só com dígitos.
+- `@Prop` de campo com tipo união (ex.: `role: UserRole`, `status: 'ativa' | ...`) precisa de `type: String` explícito: nos testes o Vitest não gera o tipo de uniões e o Mongoose quebra.
 - Erros: lançar `NotFoundException('...')`, `ForbiddenException('...')` etc. com mensagem própria; o filtro cuida do formato.
 - Configuração sempre por variável de ambiente (`ConfigService`), nunca fixa no código. A API precisa ser **stateless** (nada gravado em disco ou memória do servidor), para escalar em várias instâncias na AWS.
 - Versões:
@@ -100,9 +131,15 @@ Testado manualmente: a API sobe, o login responde 401/400 com mensagem em portug
 
 ## Próximos blocos (em ordem)
 
-Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed dele**.
+Cada bloco de funcionalidade **inclui os testes e2e dele**, **a parte do seed dele** e **a documentação Swagger das rotas dele**.
 
-### Bloco 5 — Base de testes, seed e saúde → `test(backend): base de testes e2e, seed de usuários e health check`
+### Bloco 5 — Base de testes, seed, saúde e Swagger (em 5 commits)
+1. `docs: decisões de infraestrutura, custos e Swagger`
+2. `feat(backend): seed de usuários e modo dev:memory`
+3. `feat(backend): health check da API e do MongoDB`
+4. `docs(backend): Swagger documentado e exportação do OpenAPI`
+5. `test(backend): base de testes e2e e testes de autenticação, health e Swagger`
+
 - `src/database/seed.ts`:
   - exporta `runSeed(connection)`, que limpa as coleções e insere os dados;
   - quando roda direto (`npm run seed`), conecta no `MONGODB_URI`.
@@ -118,6 +155,7 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - roda o seed;
   - tem uma função `login(email)` que devolve o token.
 - `test/auth.e2e-spec.ts`: login ok/401/400, `/auth/me` com e sem token, senha nunca aparece na resposta.
+- Swagger: `src/swagger.ts` (`setupSwagger`, `buildOpenApiDocument`), classes de resposta em `src/auth/auth.responses.ts`, script `src/openapi.ts` (`npm run openapi` → `docs/openapi.json`) e `test/swagger.e2e-spec.ts`.
 
 ### Bloco 6 — Pacientes → `feat(backend): cadastro e prontuário unificado de pacientes`
 - `src/patients/patient.schema.ts`:
@@ -210,10 +248,10 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - Banco: **MongoDB Atlas** (free tier, já é replica set) na região da AWS `sa-east-1`. Alternativa: DocumentDB, mais caro.
   - Site: manter na Vercel ou mover para S3 + CloudFront.
 - Workflow `.github/workflows/deploy.yml`: build da imagem, push no ECR e atualização do serviço ECS. Autenticação por OIDC, sem chave da AWS no GitHub.
-- **Custo:** ALB e Fargate saem do free tier. Ver se o grupo tem créditos (ex.: AWS Academy).
-  - Alternativa barata: **EC2 t3.micro** (free tier) com Docker Compose, mais S3 e CloudWatch.
-  - Com essa alternativa, o auto scaling vira **Auto Scaling Group**, ou a demonstração fica só no teste de carga.
-  - Destruir os recursos depois da apresentação (`cdk destroy`).
+- **Custo (ver "Decisões de infraestrutura e custo"):** teto de R$ 50 no projeto todo.
+  - Duas stacks no CDK: `ApiStack` (EC2 pequena com Docker + S3 + CloudWatch, fica no ar durante a entrega) e `ScaleTestStack` (ECS Fargate + ALB + auto scaling, sobe só para o teste de carga e é destruída logo depois).
+  - Se ECS/ALB não estiverem liberados no plano Free, a escalabilidade vira **Auto Scaling Group** de EC2.
+  - Destruir tudo depois da apresentação (`cdk destroy --all`).
 - `docs/infraestrutura.md`: diagrama da arquitetura AWS, passo a passo do deploy, custos.
 
 ### Bloco 13 — Pasta `tests/` (Qualidade) → `test: plano de testes, testes de carga e relatórios`
