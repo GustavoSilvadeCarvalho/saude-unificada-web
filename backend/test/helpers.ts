@@ -28,6 +28,8 @@ export interface TestContext {
   api: () => ReturnType<typeof request>
   /** Faz login com um usuário do seed e devolve o token */
   login: (email: string, password?: string) => Promise<string>
+  /** Igual ao login, mas devolve também o usuário (com o id) */
+  loginUser: (email: string) => Promise<{ token: string; user: { id: string; name: string; role: string } }>
   close: () => Promise<void>
 }
 
@@ -64,10 +66,14 @@ export async function createTestApp(): Promise<TestContext> {
 
   const api = () => request(app.getHttpServer())
 
-  async function login(email: string, password = SEED_PASSWORD) {
+  async function loginUser(email: string, password = SEED_PASSWORD) {
     const res = await api().post('/api/auth/login').send({ email, password })
     if (res.status !== 200) throw new Error(`Login de ${email} falhou: ${res.status} ${JSON.stringify(res.body)}`)
-    return res.body.token as string
+    return res.body as { token: string; user: { id: string; name: string; role: string } }
+  }
+
+  async function login(email: string, password = SEED_PASSWORD) {
+    return (await loginUser(email, password)).token
   }
 
   async function close() {
@@ -77,5 +83,5 @@ export async function createTestApp(): Promise<TestContext> {
     await replSet?.stop()
   }
 
-  return { app, connection, replSet, api, login, close }
+  return { app, connection, replSet, api, login, loginUser, close }
 }
