@@ -9,7 +9,13 @@ import { buildOpenApiDocument } from '../src/swagger.js'
 // Não precisa de banco: o modo "preview" monta os controllers sem conectar no MongoDB.
 
 /** Rotas abertas (sem token). Toda rota fora desta lista precisa de @ApiBearerAuth() */
-const PUBLIC_ROUTES = ['POST /api/auth/login', 'GET /api/health', 'GET /api/health/live']
+const PUBLIC_ROUTES = [
+  'POST /api/auth/login',
+  'POST /api/auth/patient-login',
+  'POST /api/auth/patient-register',
+  'GET /api/health',
+  'GET /api/health/live',
+]
 
 type Operation = {
   summary?: string
@@ -53,6 +59,13 @@ describe('Documentação Swagger', () => {
         'GET /api/appointments/{id}/documents/{documentId}/download',
         'GET /api/regions',
         'GET /api/regional-data',
+        'POST /api/auth/patient-login',
+        'POST /api/auth/patient-register',
+        'GET /api/me/record',
+        'GET /api/me/appointments',
+        'GET /api/me/exams',
+        'GET /api/me/access-log',
+        'GET /api/me/appointments/{id}/documents/{documentId}/download',
       ]),
     )
   })

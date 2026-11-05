@@ -62,6 +62,128 @@
         ]
       }
     },
+    "/api/auth/patient-login": {
+      "post": {
+        "description": "O token traz o CPF do paciente e só abre as rotas /me. A senha nunca aparece na resposta.",
+        "operationId": "AuthController_patientLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido ou senha vazia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "CPF sem conta ou senha errada (mesma mensagem nos dois casos)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "CPF ou senha inválidos."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login do paciente no app (CPF e senha, como no gov.br)",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/auth/patient-register": {
+      "post": {
+        "description": "O paciente confirma quem é com CPF + data de nascimento, que precisam bater com o prontuário criado pelo médico (só quem já foi atendido tem cadastro). A senha tem de 8 a 64 caracteres, com letras e números, e não pode conter o CPF nem a data de nascimento. Já devolve o token (entra direto).",
+        "operationId": "AuthController_registerPatient",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientRegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF e data de nascimento não conferem, ou senha fraca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A senha precisa ter letras e números."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O CPF já tem conta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Este CPF já tem conta. Use a opção Entrar."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Primeiro acesso do paciente: cria a senha do app",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
     "/api/auth/me": {
       "get": {
         "operationId": "AuthController_me",
@@ -934,18 +1056,353 @@
           "Documentos"
         ]
       }
+    },
+    "/api/me/record": {
+      "get": {
+        "description": "O prontuário do próprio paciente (mesmo formato de GET /patients/:cpf). Somente leitura.",
+        "operationId": "MeController_record",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Carteira digital de saúde",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/appointments": {
+      "get": {
+        "description": "`status=realizado`: o que já fez. `status=agendado`: o que vai fazer. Com os documentos anexados.",
+        "operationId": "MeController_appointments",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "realizado = histórico (mais recente primeiro); agendado = próximos (mais próximo primeiro); vazio = todos",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "realizado",
+                "agendado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppointmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Histórico e próximos atendimentos",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/exams": {
+      "get": {
+        "operationId": "MeController_exams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Exames e laudos, do mais recente ao mais antigo",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/access-log": {
+      "get": {
+        "description": "LGPD: o paciente vê quais profissionais abriram o prontuário, registraram atendimento ou baixaram documentos.",
+        "operationId": "MeController_accessLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessLogEntryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quem acessou o meu prontuário",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/appointments/{id}/documents/{documentId}/download": {
+      "get": {
+        "description": "Mesmo funcionamento do link do médico (5 minutos, sem token). Só documentos do próprio paciente.",
+        "operationId": "MeController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80c01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento ou documento não encontrado (ou de outro paciente)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Documento não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link para baixar um documento meu (receita, laudo, exame)",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
     }
   },
   "info": {
     "title": "Saúde Unificada — API",
-    "description": "API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pelo site (médicos e gestores) e pelo app (pacientes).\n\n**Como testar por aqui**\n1. Abra *Autenticação → POST /api/auth/login* e clique em **Execute** (o exemplo já vem com o médico de teste).\n2. Copie o `token` da resposta, clique em **Authorize** (cadeado no topo) e cole o token.\n3. As outras rotas passam a mandar o token automaticamente (ele fica salvo mesmo se a página recarregar).\n\n**Usuários de teste** (ambiente de desenvolvimento e demonstração), senha `123456`:\n- `medico@teste.com`: médico (Clínica Médica)\n- `cardio@teste.com`: médica (Cardiologia)\n- `gestor@teste.com`: gestora pública\n\nErros sempre voltam como `{ \"statusCode\": 401, \"message\": \"...\" }`, com a mensagem em português.\nContrato completo: `docs/API_CONTRACT.md`.",
+    "description": "API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pelo site (médicos e gestores) e pelo app (pacientes).\n\n**Como testar por aqui**\n1. Abra *Autenticação → POST /api/auth/login* e clique em **Execute** (o exemplo já vem com o médico de teste).\n2. Copie o `token` da resposta, clique em **Authorize** (cadeado no topo) e cole o token.\n3. As outras rotas passam a mandar o token automaticamente (ele fica salvo mesmo se a página recarregar).\n\n**Usuários de teste** (ambiente de desenvolvimento e demonstração), senha `123456`:\n- `medico@teste.com`: médico (Clínica Médica)\n- `cardio@teste.com`: médica (Cardiologia)\n- `gestor@teste.com`: gestora pública\n\n**Pacientes no app** (`POST /auth/patient-login`, CPF + senha `paciente123`): Maria `22916926402` e João `27952204408`.\nPrimeiro acesso (`POST /auth/patient-register`): Ana `50717927296`, nascida em `1996-11-05`.\n\nErros sempre voltam como `{ \"statusCode\": 401, \"message\": \"...\" }`, com a mensagem em português.\nContrato completo: `docs/API_CONTRACT.md`.",
     "version": "0.1.0",
     "contact": {}
   },
   "tags": [
     {
       "name": "Autenticação",
-      "description": "Login e dados do usuário logado"
+      "description": "Login (site: e-mail; app: CPF, como no gov.br), primeiro acesso do paciente e usuário logado"
     },
     {
       "name": "Pacientes",
@@ -962,6 +1419,10 @@
     {
       "name": "Dados regionais",
       "description": "Painel do gestor público: totais agregados e anônimos por região e mês"
+    },
+    {
+      "name": "Paciente (app)",
+      "description": "Carteira digital de saúde, histórico, próximos atendimentos, exames e quem acessou o prontuário"
     },
     {
       "name": "Saúde",
@@ -1009,13 +1470,20 @@
           },
           "email": {
             "type": "string",
-            "example": "medico@teste.com"
+            "example": "medico@teste.com",
+            "description": "Médico e gestor"
+          },
+          "cpf": {
+            "type": "string",
+            "example": "22916926402",
+            "description": "Só no perfil paciente"
           },
           "role": {
             "type": "string",
             "enum": [
               "medico",
-              "gestor"
+              "gestor",
+              "paciente"
             ],
             "example": "medico"
           },
@@ -1042,7 +1510,6 @@
         "required": [
           "id",
           "name",
-          "email",
           "role"
         ]
       },
@@ -1079,6 +1546,49 @@
         "required": [
           "statusCode",
           "message"
+        ]
+      },
+      "PatientLoginDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "22916926402",
+            "description": "Só dígitos ou com máscara (229.169.264-02)"
+          },
+          "password": {
+            "type": "string",
+            "example": "paciente123"
+          }
+        },
+        "required": [
+          "cpf",
+          "password"
+        ]
+      },
+      "PatientRegisterDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "50717927296",
+            "description": "Só dígitos ou com máscara"
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1996-11-05",
+            "description": "AAAA-MM-DD, igual à do cadastro na unidade de saúde"
+          },
+          "password": {
+            "type": "string",
+            "example": "meuApp2026",
+            "description": "De 8 a 64 caracteres, com letras e números; não pode conter o CPF nem a data de nascimento"
+          }
+        },
+        "required": [
+          "cpf",
+          "birthDate",
+          "password"
         ]
       },
       "HealthResponse": {
@@ -1855,18 +2365,54 @@
         "properties": {
           "url": {
             "type": "string",
-            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300",
-            "description": "Abrir direto no navegador ou no app (não precisa do token)"
+            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300"
           },
           "expiresAt": {
             "type": "string",
-            "example": "2026-10-01T14:46:00.000Z",
-            "description": "O link vale 5 minutos"
+            "example": "2026-10-01T14:46:00.000Z"
           }
         },
         "required": [
           "url",
           "expiresAt"
+        ]
+      },
+      "AccessLogEntryResponse": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z"
+          },
+          "description": {
+            "type": "string",
+            "example": "Abriu o seu prontuário"
+          },
+          "userName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "userRole": {
+            "type": "string",
+            "enum": [
+              "medico",
+              "gestor",
+              "paciente"
+            ],
+            "example": "medico"
+          },
+          "action": {
+            "type": "string",
+            "example": "patient.view",
+            "description": "Código da ação (auditoria)"
+          }
+        },
+        "required": [
+          "at",
+          "description",
+          "userName",
+          "userRole",
+          "action"
         ]
       }
     }

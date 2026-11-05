@@ -10,8 +10,11 @@ export class UserResponse {
   @ApiProperty({ example: 'Dr. Rafael Moreira Lima' })
   name: string
 
-  @ApiProperty({ example: 'medico@teste.com' })
-  email: string
+  @ApiPropertyOptional({ example: 'medico@teste.com', description: 'Médico e gestor' })
+  email?: string
+
+  @ApiPropertyOptional({ example: '22916926402', description: 'Só no perfil paciente' })
+  cpf?: string
 
   @ApiProperty({ enum: USER_ROLES, example: 'medico' })
   role: UserRole

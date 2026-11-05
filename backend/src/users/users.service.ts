@@ -12,6 +12,19 @@ export class UsersService {
     return this.userModel.findOne({ email: email.trim().toLowerCase() }).select('+passwordHash').exec()
   }
 
+  /** Conta de paciente pelo CPF, incluindo o hash da senha (usado só no login do app) */
+  findPatientByCpfWithPassword(cpf: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ cpf, role: 'paciente' }).select('+passwordHash').exec()
+  }
+
+  async patientAccountExists(cpf: string): Promise<boolean> {
+    return (await this.userModel.exists({ cpf, role: 'paciente' })) !== null
+  }
+
+  createPatientAccount(data: { name: string; cpf: string; passwordHash: string }): Promise<UserDocument> {
+    return this.userModel.create({ ...data, role: 'paciente' })
+  }
+
   async findById(id: string): Promise<UserDocument | null> {
     if (!isValidObjectId(id)) return null
     return this.userModel.findById(id).exec()

@@ -110,10 +110,15 @@ export class DocumentsService {
 
   /**
    * Link temporário (5 min) para baixar o documento, sem precisar do token.
-   * Qualquer médico pode baixar (o prontuário é unificado); cada download fica na auditoria.
+   * Qualquer médico pode baixar (o prontuário é unificado); o paciente, só os dele.
+   * Cada download fica na auditoria.
    */
   async downloadLink(appointmentId: string, documentId: string, user: AuthUser, apiBaseUrl: string) {
     const appointment = await this.findAppointment(appointmentId)
+    // O paciente só baixa os próprios documentos; de outro paciente responde como se não existisse
+    if (user.role === 'paciente' && appointment.patientCpf !== user.cpf) {
+      throw new NotFoundException(APPOINTMENT_NOT_FOUND)
+    }
     const document = isValidObjectId(documentId)
       ? appointment.documents.find((d) => d._id?.equals(documentId))
       : undefined

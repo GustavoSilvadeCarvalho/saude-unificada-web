@@ -19,6 +19,9 @@ API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pel
 - \`cardio@teste.com\`: médica (Cardiologia)
 - \`gestor@teste.com\`: gestora pública
 
+**Pacientes no app** (\`POST /auth/patient-login\`, CPF + senha \`paciente123\`): Maria \`22916926402\` e João \`27952204408\`.
+Primeiro acesso (\`POST /auth/patient-register\`): Ana \`50717927296\`, nascida em \`1996-11-05\`.
+
 Erros sempre voltam como \`{ "statusCode": 401, "message": "..." }\`, com a mensagem em português.
 Contrato completo: \`docs/API_CONTRACT.md\`.
 `.trim()
@@ -30,11 +33,12 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription(DESCRIPTION)
     .setVersion(version)
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Token devolvido pelo login' })
-    .addTag('Autenticação', 'Login e dados do usuário logado')
+    .addTag('Autenticação', 'Login (site: e-mail; app: CPF, como no gov.br), primeiro acesso do paciente e usuário logado')
     .addTag('Pacientes', 'Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)')
     .addTag('Atendimentos', 'Agenda do médico, histórico do paciente e registro de atendimento')
     .addTag('Documentos', 'Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)')
     .addTag('Dados regionais', 'Painel do gestor público: totais agregados e anônimos por região e mês')
+    .addTag('Paciente (app)', 'Carteira digital de saúde, histórico, próximos atendimentos, exames e quem acessou o prontuário')
     .addTag('Saúde', 'Status da API e do banco (monitoramento e load balancer)')
     .build()
   return SwaggerModule.createDocument(app, config)

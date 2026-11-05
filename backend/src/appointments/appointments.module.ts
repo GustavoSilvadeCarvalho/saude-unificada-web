@@ -20,5 +20,7 @@ import { DocumentsService } from './documents.service.js'
   ],
   controllers: [AppointmentsController, DocumentsController],
   providers: [AppointmentsService, DocumentsService, TransactionRunner],
+  // O app do paciente (MeModule) reaproveita o download e a leitura dos atendimentos
+  exports: [DocumentsService, MongooseModule],
 })
 export class AppointmentsModule {}

@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AppointmentsModule } from './appointments/appointments.module.js'
 import { AuthModule } from './auth/auth.module.js'
 import { HealthModule } from './health/health.module.js'
+import { MeModule } from './me/me.module.js'
 import { PatientsModule } from './patients/patients.module.js'
 import { RegionsModule } from './regions/regions.module.js'
 import { StorageModule } from './storage/storage.module.js'
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module.js'
     PatientsModule,
     AppointmentsModule,
     RegionsModule,
+    MeModule,
   ],
 })
 export class AppModule {}

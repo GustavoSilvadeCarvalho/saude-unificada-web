@@ -25,12 +25,21 @@ export class PatientsService {
     private readonly regionsService: RegionsService,
   ) {}
 
-  /** Prontuário unificado. 404 se o CPF não existir (o front usa isso para oferecer o cadastro) */
+  /** Prontuário unificado acessado por um profissional: o acesso fica na auditoria */
   async getRecord(cpf: string, user: AuthUser) {
+    const record = await this.record(cpf)
+    await this.auditService.record(user, 'patient.view', cpf)
+    return record
+  }
+
+  /**
+   * Prontuário unificado (paciente + resumo dos atendimentos).
+   * 404 se o CPF não existir (o site usa isso para oferecer o cadastro).
+   * Também é a "carteira digital de saúde" do app (GET /me/record).
+   */
+  async record(cpf: string) {
     const patient = await this.patientModel.findOne({ cpf }).exec()
     if (!patient) throw new NotFoundException(NOT_FOUND)
-
-    await this.auditService.record(user, 'patient.view', cpf)
     return { ...patient.toJSON(), appointmentSummaries: await this.appointmentSummaries(cpf) }
   }
 
