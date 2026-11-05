@@ -11,7 +11,9 @@
     "seed": "nest build && node dist/database/seed.js",
     "openapi": "nest build && node dist/openapi.js",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:cov": "vitest run --config ./vitest.config.e2e.ts --coverage",
+    "test:ci": "vitest run --config ./vitest.config.e2e.ts --coverage --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml"
   },
   "engines": {
     "node": ">=20"
@@ -42,6 +44,7 @@
     "@types/multer": "^2.3.0",
     "@types/node": "^22.20.5",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.12",
     "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.3.1",
     "tslib": "^2.9.1",
