@@ -1,0 +1,56 @@
+# API + MongoDB (replica set) para rodar tudo com Docker, sem instalar Node nem MongoDB.
+#
+#   docker compose up -d --build                                    # sobe e espera ficar saudável
+#   docker compose run --rm api node dist/database/seed.js          # dados de teste (usuários, pacientes...)
+#   http://localhost:3000/api/docs                                  # Swagger
+#   docker compose down        (para)   |   docker compose down -v  (para e apaga os dados)
+#
+# Conectar no banco pelo computador (ex.: MongoDB Compass):
+#   mongodb://localhost:27017/saude-unificada?directConnection=true
+
+name: saude-unificada
+
+services:
+  mongo:
+    image: mongo:8
+    # Replica set de 1 nó: o registro de atendimento usa transação (igual ao Atlas)
+    command: ['--replSet', 'rs0', '--bind_ip_all']
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Inicia o replica set na primeira vez e só fica "healthy" quando o nó já é primário
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }) }; quit(db.hello().isWritablePrimary ? 0 : 1)"
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+
+  api:
+    build: ./backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/saude-unificada?replicaSet=rs0
+      # Troque em qualquer ambiente que não seja o seu computador
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-no-docker}
+      JWT_EXPIRES_IN: 8h
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      STORAGE_DRIVER: local
+      SWAGGER_ENABLED: 'true'
+    volumes:
+      - uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  uploads:
