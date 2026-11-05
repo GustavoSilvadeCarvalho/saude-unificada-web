@@ -5,12 +5,16 @@ import mongoose, { type Connection, type Model, type Schema, Types } from 'mongo
 import { Appointment, AppointmentSchema } from '../appointments/appointment.schema.js'
 import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema.js'
 import { loadEnvFile } from '../common/env.js'
+import { REGIONS } from '../common/regions.js'
 import { todayDateOnly } from '../common/validators.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
+import { Region, RegionSchema } from '../regions/region.schema.js'
+import { RegionalStat, RegionalStatSchema } from '../regions/regional-stat.schema.js'
 import { createStorage } from '../storage/storage.factory.js'
 import type { StorageService } from '../storage/storage.service.js'
 import { User, UserSchema } from '../users/user.schema.js'
 import { demoPdf } from './demo-pdf.js'
+import { buildRegionalData } from './regional-data.js'
 import { SEED_CPFS, SEED_PASSWORD, type SeedAppointment, seedAppointments, seedPatients, seedUsers } from './seed-data.js'
 
 /**
@@ -74,8 +78,18 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   const patientModel = getModel(connection, Patient.name, PatientSchema)
   const appointmentModel = getModel(connection, Appointment.name, AppointmentSchema)
   const auditModel = getModel(connection, AuditLog.name, AuditLogSchema)
+  const regionModel = getModel(connection, Region.name, RegionSchema)
+  const regionalStatModel = getModel(connection, RegionalStat.name, RegionalStatSchema)
   // Garante os índices (ex.: e-mail e CPF únicos) antes de inserir
-  await Promise.all([userModel.init(), patientModel.init(), appointmentModel.init(), auditModel.init()])
+  const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel]
+  await Promise.all(models.map((model) => model.init()))
+
+  // Regiões primeiro: o cadastro de paciente é validado por elas
+  await regionModel.deleteMany({})
+  await regionModel.insertMany(REGIONS.map((name, order) => ({ name, order })))
+  const regionalData = buildRegionalData()
+  await regionalStatModel.deleteMany({})
+  await regionalStatModel.insertMany(regionalData)
 
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10)
   await userModel.deleteMany({})
@@ -118,7 +132,13 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   // A trilha de auditoria começa vazia a cada seed
   await auditModel.deleteMany({})
 
-  return { users: seedUsers.length, patients: seedPatients.length, appointments: seedAppointments.length }
+  return {
+    users: seedUsers.length,
+    patients: seedPatients.length,
+    appointments: seedAppointments.length,
+    regions: REGIONS.length,
+    regionalStats: regionalData.length,
+  }
 }
 
 // Execução direta: npm run seed (usa o MONGODB_URI do .env)
@@ -134,7 +154,8 @@ if (isMain) {
   try {
     const result = await runSeed(connection, { storage: createStorage(process.env) })
     console.log(
-      `Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}), ${result.patients} pacientes e ${result.appointments} atendimentos.`,
+      `Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}), ${result.patients} pacientes, ` +
+        `${result.appointments} atendimentos, ${result.regions} regiões e ${result.regionalStats} linhas de dados regionais.`,
     )
   } finally {
     await connection.close()

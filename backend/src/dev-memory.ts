@@ -23,7 +23,8 @@ const connection = await mongoose.createConnection(process.env.MONGODB_URI).asPr
 const result = await runSeed(connection, { storage: createStorage(process.env) })
 await connection.close()
 logger.log(
-  `Seed aplicado: ${result.users} usuários (senha de todos: 123456), ${result.patients} pacientes e ${result.appointments} atendimentos.`,
+  `Seed aplicado: ${result.users} usuários (senha de todos: 123456), ${result.patients} pacientes, ` +
+    `${result.appointments} atendimentos, ${result.regions} regiões e ${result.regionalStats} linhas de dados regionais.`,
 )
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
