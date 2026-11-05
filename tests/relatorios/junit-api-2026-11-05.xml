@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="213" failures="0" errors="0" time="15.196977701">
+    <testsuite name="test/appointments.e2e-spec.ts" timestamp="2026-11-05T19:06:24.566Z" hostname="MAXC1TIPC1" tests="30" failures="0" errors="0" skipped="0" time="1.864150816">
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments?doctorId= &gt; devolve a agenda do médico (passados e próximos) em ordem crescente de data" time="0.018473177">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments?doctorId= &gt; responde 403 na agenda de outro médico" time="0.0044083">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments?patientCpf= &gt; devolve o histórico do paciente com todos os médicos, do mais recente ao mais antigo" time="0.011829194">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments?patientCpf= &gt; registra o acesso ao histórico na auditoria" time="0.012765204">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 400 com filtro &quot;&quot;" time="0.002712209">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 400 com filtro &quot;?doctorId=x&amp;patientCpf=22916926402&quot;" time="0.003189363">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 400 com filtro &quot;?patientCpf=12345678900&quot;" time="0.002702291">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 400 com filtro &quot;?doctorId=123&quot;" time="0.002304267">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 400 com os dois filtros juntos" time="0.002920894">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; GET /api/appointments (filtros) &gt; responde 403 para o gestor" time="0.00232054">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; registra um atendimento novo e atualiza o prontuário" time="0.039767374">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; conclui um agendamento em vez de criar outro" time="0.039969075">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; remarca um agendamento" time="0.017855083">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; cria um agendamento novo" time="0.008998605">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 403 quando o doctorId não é o do médico logado" time="0.002621205">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 403 ao concluir agendamento de outro médico" time="0.010331661">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400 quando o agendamento é de outro paciente, sem gravar nada" time="0.057686152">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 404 com agendamento inválido" time="0.007646691">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 404 com agendamento inexistente" time="0.007424875">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 404 quando o paciente não está cadastrado" time="0.006769906">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { date: &apos;2026-11-06T19:06:21.716Z&apos; }" time="0.002892888">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { summary: &apos;Ok.&apos; }" time="0.00274217">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { status: &apos;agendado&apos;, date: &apos;2026-11-04T19:06:21.716Z&apos;, summary: &apos;&apos; }" time="0.002663669">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { status: &apos;agendado&apos;, date: &apos;2026-11-07T19:06:21.716Z&apos;, summary: &apos;&apos;, newConditions: [ { name: &apos;Gripe&apos;, status: &apos;ativa&apos;, diagnosedAt: &apos;2026-11-05&apos; } ] }" time="0.00294471">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { date: &apos;01/10/2026 14:30&apos; }" time="0.002909161">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { status: &apos;cancelado&apos; }" time="0.002997579">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { newAllergies: [ { substance: &apos;Pólen&apos;, severity: &apos;altíssima&apos;, recordedAt: &apos;2026-11-05&apos; } ] }" time="0.004404528">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { newConditions: [ { name: &apos;Gripe&apos;, cid: &apos;gripe&apos;, status: &apos;ativa&apos;, diagnosedAt: &apos;2026-11-05&apos; } ] }" time="0.003205636">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 400: { newMedications: [ { name: &apos;Dipirona&apos;, dosage: &apos;&apos;, frequency: &apos;6/6h&apos;, startDate: &apos;2026-11-05&apos; } ] }" time="0.002541098">
+        </testcase>
+        <testcase classname="test/appointments.e2e-spec.ts" name="Atendimentos &gt; POST /api/appointments &gt; responde 403 para o gestor" time="0.002202369">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/auth.e2e-spec.ts" timestamp="2026-11-05T19:06:24.571Z" hostname="MAXC1TIPC1" tests="12" failures="0" errors="0" skipped="0" time="1.811011808">
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; faz login do médico e devolve token e dados do usuário" time="0.153385899">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; nunca devolve a senha nem campos internos do MongoDB" time="0.121284212">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; aceita o e-mail com letras maiúsculas" time="0.11849427">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; responde 401 com senha errada" time="0.10494531">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; responde 401 com a mesma mensagem para e-mail inexistente (não revela quais e-mails existem)" time="0.00461426">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; responde 400 com e-mail inválido" time="0.003863888">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; responde 400 sem senha" time="0.002792945">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; POST /api/auth/login &gt; rejeita tentativa de injeção NoSQL no e-mail" time="0.002673936">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; GET /api/auth/me &gt; devolve o usuário logado" time="0.103860328">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; GET /api/auth/me &gt; responde 401 sem token" time="0.002594945">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; GET /api/auth/me &gt; responde 401 com token inválido" time="0.002125125">
+        </testcase>
+        <testcase classname="test/auth.e2e-spec.ts" name="Autenticação &gt; GET /api/auth/me &gt; responde 401 com token assinado por outro segredo (token adulterado)" time="0.003319616">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/cpf.spec.ts" timestamp="2026-11-05T19:06:24.572Z" hostname="MAXC1TIPC1" tests="19" failures="0" errors="0" skipped="0" time="0.01266142">
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; aceita &quot;22916926402&quot;" time="0.00276871">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; aceita &quot;229.169.264-02&quot;" time="0.000314425">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; aceita &quot;  229.169.264-02  &quot;" time="0.000179911">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;229169264&quot;" time="0.000260298">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;229169264021&quot;" time="0.000150927">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;229.16926402&quot;" time="0.000135492">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;229-169-264.02&quot;" time="0.0001452">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;229 169 264 02&quot;" time="0.00013605">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;2291692640a&quot;" time="0.001004664">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa &quot;&quot;" time="0.000176559">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa null" time="0.000129136">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; normalizeCpf (formato) &gt; recusa 22916926402" time="0.000129136">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; cpfProblem (regras) &gt; aceita CPF com dígitos verificadores corretos" time="0.000546017">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; cpfProblem (regras) &gt; recusa dígito verificador errado (primeiro e segundo)" time="0.000292913">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; cpfProblem (regras) &gt; recusa os 11 dígitos iguais, mesmo os que &quot;passam&quot; na conta (000.000.000-00, 111.111.111-11...)" time="0.000482323">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; cpfProblem (regras) &gt; recusa todos os CPFs de exemplo conhecidos, que têm dígitos válidos" time="0.002131061">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; cpfProblem (regras) &gt; recusa formato errado" time="0.000242069">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; todos os CPFs do seed passam nas regras" time="0.000438602">
+        </testcase>
+        <testcase classname="test/cpf.spec.ts" name="Regras de CPF &gt; completeCpf calcula os dígitos verificadores" time="0.000164197">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/documents.e2e-spec.ts" timestamp="2026-11-05T19:06:24.575Z" hostname="MAXC1TIPC1" tests="17" failures="0" errors="0" skipped="0" time="1.927140909">
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; anexa o arquivo e devolve o documento no formato do contrato" time="0.033224102">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; o arquivo baixado é igual ao enviado" time="0.027889361">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; mantém o acento do nome do arquivo" time="0.018820427">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; laudo e exame também entram na lista de exames do prontuário" time="0.034057795">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; o documento aparece no atendimento" time="0.010065148">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; recusa arquivo que não é PDF, JPG nem PNG, mesmo com nome .pdf" time="0.00442115">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 413 com arquivo maior que 10 MB" time="0.04853683">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 400 sem arquivo, com o campo errado ou com tipo inválido" time="0.013629138">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 403 quando o atendimento é de outro médico" time="0.019068711">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 404 com atendimento inválido" time="0.004354033">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 404 com atendimento inexistente" time="0.005402487">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; responde 403 para o gestor" time="0.002974532">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; POST /api/appointments/:id/documents &gt; registra o upload na auditoria" time="0.002701803">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; GET /api/appointments/:id/documents/:documentId/download &gt; qualquer médico baixa os documentos do prontuário (inclusive os do seed)" time="0.022134455">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; GET /api/appointments/:id/documents/:documentId/download &gt; o link expira e não aceita adulteração" time="0.025487107">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; GET /api/appointments/:id/documents/:documentId/download &gt; responde 404 com documento inexistente" time="0.005120678">
+        </testcase>
+        <testcase classname="test/documents.e2e-spec.ts" name="Documentos (receitas, laudos, exames) &gt; GET /api/appointments/:id/documents/:documentId/download &gt; responde 401 sem token e 403 para o gestor" time="0.0049532">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/health.e2e-spec.ts" timestamp="2026-11-05T19:06:24.577Z" hostname="MAXC1TIPC1" tests="4" failures="0" errors="0" skipped="0" time="1.338756938">
+        <testcase classname="test/health.e2e-spec.ts" name="Saúde da API &gt; GET /api/health responde 200 com o MongoDB no ar, sem precisar de token" time="0.034415801">
+        </testcase>
+        <testcase classname="test/health.e2e-spec.ts" name="Saúde da API &gt; GET /api/health/live responde 200" time="0.005082056">
+        </testcase>
+        <testcase classname="test/health.e2e-spec.ts" name="Saúde da API &gt; serve o Swagger UI em /api/docs e o JSON em /api/docs-json" time="0.045707289">
+        </testcase>
+        <testcase classname="test/health.e2e-spec.ts" name="Saúde da API &gt; GET /api/health responde 503 quando o MongoDB cai, e o /live continua 200" time="0.103307745">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/password.spec.ts" timestamp="2026-11-05T19:06:24.578Z" hostname="MAXC1TIPC1" tests="15" failures="0" errors="0" skipped="0" time="0.008019922">
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; aceita &quot;meuApp2026&quot;" time="0.002996741">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; aceita &quot;Saude#Unificada7&quot;" time="0.000410945">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; aceita &quot;ônibus azul 42&quot;" time="0.000226844">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; aceita &quot;paciente123&quot;" time="0.000130463">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;abc123&quot;" time="0.000325948">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1&quot;" time="0.00012711">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;somenteletras&quot;" time="0.000108254">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;1234567890&quot;" time="0.000115098">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;Senha123&quot;" time="0.000245631">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;abc50717927296&quot;" time="0.000112025">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;x179272x&quot;" time="0.000120267">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;maria05111996&quot;" time="0.000123968">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;nasci19961105&quot;" time="0.000107834">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa &quot;ana051196xy&quot;" time="0.000110559">
+        </testcase>
+        <testcase classname="test/password.spec.ts" name="Regras da senha do paciente &gt; recusa valor que não é texto" time="0.000139193">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/patient-app.e2e-spec.ts" timestamp="2026-11-05T19:06:24.580Z" hostname="MAXC1TIPC1" tests="26" failures="0" errors="0" skipped="0" time="2.097018733">
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-login &gt; entra com CPF e senha e devolve o perfil paciente com o CPF" time="0.103996938">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-login &gt; aceita o CPF com máscara" time="0.098606742">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-login &gt; responde 401 com a mesma mensagem para senha errada e para CPF sem conta" time="0.107492413">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-login &gt; responde 400 com CPF inválido" time="0.004473741">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-login &gt; GET /api/auth/me devolve a conta do paciente" time="0.008736142">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; cria a conta quando CPF e data de nascimento batem com o prontuário, e já entra" time="0.202160817">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 409 se o CPF já tem conta" time="0.005645743">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com a mesma mensagem para data errada e CPF sem prontuário" time="0.006662839">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com senha fraca: &quot;curta1&quot;" time="0.003570416">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com senha fraca: &quot;semnumeros&quot;" time="0.003883444">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com senha fraca: &quot;Senha123&quot;" time="0.003466981">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com senha fraca: &quot;bia17092012&quot;" time="0.003489959">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com senha fraca: &quot;x077695y&quot;" time="0.003923951">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; POST /api/auth/patient-register (primeiro acesso) &gt; responde 400 com data de nascimento em formato errado" time="0.002357905">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; GET /me/record: carteira digital de saúde" time="0.012035156">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; GET /me/appointments: histórico e próximos, só da própria paciente" time="0.012704861">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; GET /me/appointments recusa situação inválida" time="0.002006255">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; GET /me/exams: do mais recente ao mais antigo" time="0.005956816">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; GET /me/access-log: mostra quem acessou o prontuário (LGPD)" time="0.014953605">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Rotas /api/me (só leitura dos próprios dados) &gt; baixa um documento próprio e não consegue o de outro paciente" time="0.020906928">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; paciente recebe 403 em GET /api/patients/27952204408" time="0.002872284">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; paciente recebe 403 em GET /api/appointments?patientCpf=22916926402" time="0.001427621">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; paciente recebe 403 em GET /api/regional-data" time="0.001332288">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; paciente recebe 403 em GET /api/regions" time="0.001184156">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; médico recebe 403 nas rotas do app" time="0.001254695">
+        </testcase>
+        <testcase classname="test/patient-app.e2e-spec.ts" name="App do paciente (login por CPF, estilo gov.br) &gt; Separação de perfis &gt; paciente não entra pelo login do site (e-mail)" time="0.002582025">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/patients.e2e-spec.ts" timestamp="2026-11-05T19:06:24.583Z" hostname="MAXC1TIPC1" tests="37" failures="0" errors="0" skipped="0" time="1.734032894">
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; devolve o prontuário unificado no formato do contrato" time="0.025434517">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; traz o resumo dos atendimentos realizados, com a especialidade do médico" time="0.012993445">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; resumo vazio para quem só tem agendamento" time="0.009520737">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; cada item das listas tem &quot;id&quot; em texto e nenhum campo interno do MongoDB" time="0.011711861">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; aceita o CPF com máscara" time="0.008743824">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 404 quando o CPF não está cadastrado" time="0.00489579">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF inválido: 81646027877 (dígito verificador errado)" time="0.003021954">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF inválido: 00000000000 (todos os dígitos iguais)" time="0.002747827">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF inválido: 229169264 (faltando dígitos)" time="0.002636222">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF inválido: 229.16926402 (máscara pela metade)" time="0.002262502">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF inválido: 2291692640a (com letra)" time="0.00166145">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 400 com CPF de exemplo conhecido (ex.: 123.456.789-09)" time="0.001678142">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 403 para o gestor (prontuário é só para médicos)" time="0.001656351">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; responde 401 sem token" time="0.001709989">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; GET /api/patients/:cpf &gt; rejeita tentativa de injeção NoSQL na URL" time="0.001623387">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; cadastra o paciente com as listas do prontuário vazias" time="0.018762528">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 409 quando o CPF já está cadastrado" time="0.007262006">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; aceita CPF com máscara e trata telefone e e-mail vazios como não informados" time="0.011094326">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; ignora listas do prontuário enviadas no cadastro (só entram pelos atendimentos)" time="0.011623652">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: &apos;81646027877&apos; }" time="0.003895038">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: &apos;000.000.000-00&apos; }" time="0.003380169">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: &apos; 816 460 278 76&apos; }" time="0.003756123">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: 81646027876 }" time="0.00329154">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: &apos;111.444.777-35&apos; }" time="0.0027289">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { cpf: &apos;52998224725&apos; }" time="0.00281732">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { fullName: &apos;   &apos; }" time="0.002941567">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { birthDate: &apos;10/05/1990&apos; }" time="0.002816411">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { birthDate: &apos;2999-01-01&apos; }" time="0.002829262">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { birthDate: &apos;1990-02-30&apos; }" time="0.002494723">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { sex: &apos;X&apos; }" time="0.003526137">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { bloodType: &apos;C+&apos; }" time="0.003114633">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { email: &apos;nao-e-email&apos; }" time="0.002915516">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 400 com dado inválido: { region: &apos;Marte&apos; }" time="0.004242147">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; POST /api/patients &gt; responde 403 para o gestor" time="0.002417619">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; Auditoria (LGPD) &gt; registra quem viu o prontuário" time="0.014892214">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; Auditoria (LGPD) &gt; registra o cadastro de paciente" time="0.001457164">
+        </testcase>
+        <testcase classname="test/patients.e2e-spec.ts" name="Pacientes &gt; Auditoria (LGPD) &gt; não registra nada quando o acesso é negado" time="0.006059063">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/regional.e2e-spec.ts" timestamp="2026-11-05T19:06:24.588Z" hostname="MAXC1TIPC1" tests="15" failures="0" errors="0" skipped="0" time="1.596068396">
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regions &gt; lista as regiões na ordem de exibição (gestor)" time="0.011498287">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regions &gt; lista as regiões na ordem de exibição (médico)" time="0.005725991">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regions &gt; responde 401 sem token" time="0.003750605">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; sem filtros: uma linha por região por mês (12 meses completos), ordenada por região e mês" time="0.018802827">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; cada linha está no formato do contrato, com as condições da maior para a menor" time="0.008787265">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; é anônimo: nenhum CPF, nome de paciente ou id sai na resposta" time="0.010229484">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; filtra por região" time="0.008290556">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; filtra pelo intervalo de meses (inclusive)" time="0.007642501">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; região vazia = todas" time="0.010355827">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; responde 400 com ?from=2026-13" time="0.00463249">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; responde 400 com ?to=10/2026" time="0.002941357">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; responde 400 com ?from=2026-09&amp;to=2026-01" time="0.002583702">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; responde 400 com ?region=Marte" time="0.003808504">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; GET /api/regional-data &gt; responde 403 para o médico (painel é só do gestor)" time="0.002480686">
+        </testcase>
+        <testcase classname="test/regional.e2e-spec.ts" name="Dados regionais (painel do gestor) &gt; Cadastro de paciente usa as regiões do banco &gt; aceita região nova cadastrada na coleção e recusa a removida" time="0.023444814">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/security.e2e-spec.ts" timestamp="2026-11-05T19:06:24.590Z" hostname="MAXC1TIPC1" tests="16" failures="0" errors="0" skipped="0" time="2.598194377">
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; Cabeçalhos HTTP (helmet) &gt; manda os cabeçalhos de segurança em toda resposta" time="0.022360042">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; Cabeçalhos HTTP (helmet) &gt; não revela a tecnologia do servidor" time="0.003015389">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; Cabeçalhos HTTP (helmet) &gt; mantém o Swagger UI funcionando com a CSP" time="0.004446363">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; CORS &gt; libera a origem do site configurada" time="0.001331101">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; CORS &gt; não libera outras origens" time="0.001420079">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; CORS &gt; responde ao preflight do navegador com os cabeçalhos que o site usa" time="0.001372307">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; Compressão &gt; comprime respostas grandes quando o cliente aceita gzip" time="0.032985037">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança &gt; Compressão &gt; não comprime quando o cliente não pede" time="0.003070633">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; bloqueia com 429 quem erra a senha da mesma conta várias vezes" time="0.312278976">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; bloqueia até a senha certa enquanto durar o bloqueio" time="0.001755805">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; conta o e-mail sem diferenciar maiúsculas (não dá para contornar trocando a caixa)" time="0.00187188">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; não atrapalha outro usuário que sai pelo mesmo IP" time="0.089252576">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; não atrapalha a mesma conta vinda de outro IP" time="0.084319072">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; bloqueia o IP que testa muitas contas diferentes" time="0.015612136">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; também limita o login do app (CPF) e o primeiro acesso, com o CPF com ou sem máscara" time="0.258288116">
+        </testcase>
+        <testcase classname="test/security.e2e-spec.ts" name="Segurança: limite de tentativas de entrada &gt; não limita as demais rotas" time="0.00891738">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/storage.spec.ts" timestamp="2026-11-05T19:06:24.592Z" hostname="MAXC1TIPC1" tests="9" failures="0" errors="0" skipped="0" time="0.04753894">
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver local &gt; grava, lê e apaga o arquivo" time="0.006556611">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver local &gt; não deixa a chave sair da pasta de uploads" time="0.001772637">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver local &gt; gera link assinado que vale 5 minutos" time="0.002536349">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver local &gt; recusa link adulterado, assinado com outro segredo ou expirado" time="0.002499473">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver s3 &gt; gera URL pré-assinada de 5 minutos, com o nome original para download" time="0.023335582">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; driver s3 &gt; grava com criptografia no servidor (AES256) e o tipo do arquivo" time="0.001909106">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; createStorage (STORAGE_DRIVER) &gt; usa o driver local por padrão" time="0.000447961">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; createStorage (STORAGE_DRIVER) &gt; usa o s3 com bucket e região" time="0.000973725">
+        </testcase>
+        <testcase classname="test/storage.spec.ts" name="Armazenamento de arquivos &gt; createStorage (STORAGE_DRIVER) &gt; explica o que falta na configuração" time="0.001838986">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/swagger.e2e-spec.ts" timestamp="2026-11-05T19:06:24.593Z" hostname="MAXC1TIPC1" tests="5" failures="0" errors="0" skipped="0" time="0.149426957">
+        <testcase classname="test/swagger.e2e-spec.ts" name="Documentação Swagger &gt; gera a documentação sem avisos (ex.: duas classes de resposta com o mesmo nome)" time="0.003695222">
+        </testcase>
+        <testcase classname="test/swagger.e2e-spec.ts" name="Documentação Swagger &gt; documenta as rotas implementadas" time="0.001836471">
+        </testcase>
+        <testcase classname="test/swagger.e2e-spec.ts" name="Documentação Swagger &gt; toda rota tem resumo, tag e uma resposta de sucesso documentada" time="0.00411797">
+        </testcase>
+        <testcase classname="test/swagger.e2e-spec.ts" name="Documentação Swagger &gt; toda rota protegida pede o token (Bearer) e as públicas não" time="0.001374961">
+        </testcase>
+        <testcase classname="test/swagger.e2e-spec.ts" name="Documentação Swagger &gt; docs/openapi.json está atualizado (se falhar, rode: npm run openapi)" time="0.015541667">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/uploads.spec.ts" timestamp="2026-11-05T19:06:24.594Z" hostname="MAXC1TIPC1" tests="8" failures="0" errors="0" skipped="0" time="0.012955591">
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; detectFileType (pelo conteúdo) &gt; reconhece PDF, JPG e PNG" time="0.004622013">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; detectFileType (pelo conteúdo) &gt; recusa outros formatos, mesmo com nome de PDF" time="0.000597281">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; cleanFileName &gt; corrige nome com acento que o multer entrega em latin1" time="0.000608106">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; cleanFileName &gt; mantém nome que já veio certo em UTF-8" time="0.00101514">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; cleanFileName &gt; remove pastas e caracteres de controle" time="0.000352139">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; cleanFileName &gt; usa um nome padrão quando não sobra nada" time="0.000255898">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; cleanFileName &gt; limita o tamanho mantendo a extensão" time="0.001526587">
+        </testcase>
+        <testcase classname="test/uploads.spec.ts" name="Arquivos enviados &gt; contentDisposition leva o nome com acento (RFC 5987) e uma versão ASCII" time="0.000366456">
+        </testcase>
+    </testsuite>
+</testsuites>

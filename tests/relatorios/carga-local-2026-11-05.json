@@ -1,0 +1,24 @@
+{
+  "url": "http://localhost:3100/api/auth/login",
+  "users": 10,
+  "durationSec": 60,
+  "startedAt": "2026-11-05T19:01:57.349Z",
+  "requests": 1012,
+  "requestsPerSecond": 16.87,
+  "latencyMs": {
+    "p50": 599,
+    "p95": 664,
+    "max": 839
+  },
+  "errors": 0,
+  "errorRate": 0,
+  "statusCounts": {
+    "200": 1012
+  },
+  "ambiente": {
+    "maquina": "AMD Ryzen 5 5600GT, 12 núcleos, 15 GB",
+    "node": "v24.21.0",
+    "api": "1 processo Node (npm run dev:memory), MongoDB em memória",
+    "limiteDeLogin": "desligado (LOGIN_RATE_LIMIT=0)"
+  }
+}
