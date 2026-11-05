@@ -1,0 +1,126 @@
+# Integração contínua: roda em todo push e pull request.
+#  - API: typecheck, testes (e2e + unitários) com cobertura mínima e relatórios como artefato
+#  - Docker: monta a imagem, sobe API + MongoDB com docker compose e roda o teste de fumaça
+#  - Site: build do front-end
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Um push novo na mesma branch cancela a execução anterior (economiza minutos)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — typecheck, testes e cobertura
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Pasta do binário do MongoDB usado nos testes (fica em cache entre execuções)
+      MONGOMS_DOWNLOAD_DIR: ${{ github.workspace }}/.cache/mongodb-binaries
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Cache do MongoDB dos testes
+        uses: actions/cache@v5
+        with:
+          path: .cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes e2e e unitários (com cobertura)
+        run: npm run test:ci
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          node -e "
+            const fs = require('node:fs')
+            if (!fs.existsSync('coverage/coverage-summary.json')) process.exit(0)
+            const { total } = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'))
+            const row = (name, m) => '| ' + name + ' | ' + m.pct + '% | ' + m.covered + '/' + m.total + ' |'
+            const lines = ['## Cobertura dos testes da API', '', '| Métrica | % | Cobertos |', '|---|---|---|',
+              row('Linhas', total.lines), row('Comandos', total.statements), row('Funções', total.functions), row('Branches', total.branches)]
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n')
+          "
+
+      - name: Publicar relatórios (cobertura e JUnit)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: relatorios-testes-api
+          path: |
+            backend/coverage/
+            backend/reports/
+          retention-days: 30
+
+  docker:
+    name: Docker — imagem, compose e teste de fumaça
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Subir API + MongoDB (espera ficarem saudáveis)
+        run: docker compose up -d --build --wait --wait-timeout 180
+
+      - name: Aplicar o seed
+        run: docker compose run --rm api node dist/database/seed.js
+
+      - name: Teste de fumaça
+        run: node backend/scripts/smoke-test.mjs http://localhost:3000
+
+      - name: Tamanho da imagem
+        if: always()
+        run: docker image ls --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}' | grep -E 'REPOSITORY|saude-unificada'
+
+      - name: Logs dos contêineres (se falhar)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Derrubar
+        if: always()
+        run: docker compose down -v
+
+  site:
+    name: Site — build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run build
