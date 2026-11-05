@@ -158,6 +158,195 @@
           "Saúde"
         ]
       }
+    },
+    "/api/patients/{cpf}": {
+      "get": {
+        "description": "Busca pelo CPF (com ou sem máscara). O acesso é registrado na auditoria (LGPD).",
+        "operationId": "PatientsController_getRecord",
+        "parameters": [
+          {
+            "name": "cpf",
+            "required": true,
+            "in": "path",
+            "description": "CPF do paciente",
+            "schema": {
+              "example": "12345678909",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão (só médicos acessam prontuários)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhum paciente com este CPF (o site oferece o cadastro)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Paciente não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Prontuário unificado do paciente",
+        "tags": [
+          "Pacientes"
+        ]
+      }
+    },
+    "/api/patients": {
+      "post": {
+        "description": "Cria o prontuário com as listas vazias. Alergias, medicamentos e condições entram depois, pelos atendimentos.",
+        "operationId": "PatientsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePatientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido ou campo obrigatório faltando/inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão (só médicos acessam prontuários)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CPF já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Já existe um paciente cadastrado com este CPF."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cadastra um paciente",
+        "tags": [
+          "Pacientes"
+        ]
+      }
     }
   },
   "info": {
@@ -170,6 +359,10 @@
     {
       "name": "Autenticação",
       "description": "Login e dados do usuário logado"
+    },
+    {
+      "name": "Pacientes",
+      "description": "Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)"
     },
     {
       "name": "Saúde",
@@ -336,6 +529,400 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "AllergyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a01"
+          },
+          "substance": {
+            "type": "string",
+            "example": "Penicilina"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "leve",
+              "moderada",
+              "grave"
+            ],
+            "example": "grave"
+          },
+          "reaction": {
+            "type": "string",
+            "example": "Anafilaxia"
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2015-06-02",
+            "description": "AAAA-MM-DD"
+          }
+        },
+        "required": [
+          "id",
+          "substance",
+          "severity",
+          "recordedAt"
+        ]
+      },
+      "MedicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a02"
+          },
+          "name": {
+            "type": "string",
+            "example": "Losartana potássica"
+          },
+          "dosage": {
+            "type": "string",
+            "example": "50 mg"
+          },
+          "frequency": {
+            "type": "string",
+            "example": "1x ao dia"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2018-04-10",
+            "description": "AAAA-MM-DD"
+          },
+          "prescribedBy": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "dosage",
+          "frequency",
+          "startDate"
+        ]
+      },
+      "ProcedureResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a03"
+          },
+          "name": {
+            "type": "string",
+            "example": "Colecistectomia videolaparoscópica"
+          },
+          "date": {
+            "type": "string",
+            "example": "2016-09-12",
+            "description": "AAAA-MM-DD"
+          },
+          "location": {
+            "type": "string",
+            "example": "Hospital das Clínicas - SP"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Sem intercorrências"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date"
+        ]
+      },
+      "ExamResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a04"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hemoglobina glicada (HbA1c)"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-07-18",
+            "description": "AAAA-MM-DD"
+          },
+          "result": {
+            "type": "string",
+            "example": "7,1% — acima da meta"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "hba1c_jul2026.pdf"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date",
+          "result"
+        ]
+      },
+      "ClinicalConditionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a05"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hipertensão arterial sistêmica"
+          },
+          "cid": {
+            "type": "string",
+            "example": "I10",
+            "description": "Código CID-10"
+          },
+          "diagnosedAt": {
+            "type": "string",
+            "example": "2018-04-10",
+            "description": "AAAA-MM-DD"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ativa",
+              "controlada",
+              "resolvida"
+            ],
+            "example": "controlada"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "diagnosedAt",
+          "status"
+        ]
+      },
+      "AppointmentSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-08-02T12:00:00.000Z"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica"
+          },
+          "summary": {
+            "type": "string",
+            "example": "PA 132/84 mmHg. Mantida conduta."
+          }
+        },
+        "required": [
+          "appointmentId",
+          "date",
+          "doctorName",
+          "summary"
+        ]
+      },
+      "PatientResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "12345678909",
+            "description": "Só dígitos"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Maria Aparecida da Silva"
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1958-03-14",
+            "description": "AAAA-MM-DD"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "Outro"
+            ],
+            "example": "F"
+          },
+          "bloodType": {
+            "type": "string",
+            "enum": [
+              "A+",
+              "A-",
+              "B+",
+              "B-",
+              "AB+",
+              "AB-",
+              "O+",
+              "O-",
+              "Não informado"
+            ],
+            "example": "O-"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(11) 98765-4321"
+          },
+          "email": {
+            "type": "string",
+            "example": "maria.silva@email.com"
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "Grande São Paulo",
+              "Campinas",
+              "Baixada Santista",
+              "Vale do Paraíba",
+              "Sorocaba",
+              "Ribeirão Preto"
+            ],
+            "example": "Grande São Paulo"
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllergyResponse"
+            }
+          },
+          "activeMedications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicationResponse"
+            }
+          },
+          "procedures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcedureResponse"
+            }
+          },
+          "exams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExamResponse"
+            }
+          },
+          "clinicalConditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClinicalConditionResponse"
+            }
+          },
+          "appointmentSummaries": {
+            "description": "Só atendimentos realizados, do mais recente para o mais antigo (preenchido a partir do bloco 7)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentSummaryResponse"
+            }
+          }
+        },
+        "required": [
+          "cpf",
+          "fullName",
+          "birthDate",
+          "sex",
+          "bloodType",
+          "region",
+          "allergies",
+          "activeMedications",
+          "procedures",
+          "exams",
+          "clinicalConditions",
+          "appointmentSummaries"
+        ]
+      },
+      "CreatePatientDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "11144477735",
+            "description": "Só dígitos (a máscara 111.444.777-35 também é aceita)"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Fulano de Tal",
+            "maxLength": 120
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1990-05-10",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "Outro"
+            ],
+            "example": "M"
+          },
+          "bloodType": {
+            "type": "string",
+            "enum": [
+              "A+",
+              "A-",
+              "B+",
+              "B-",
+              "AB+",
+              "AB-",
+              "O+",
+              "O-",
+              "Não informado"
+            ],
+            "example": "Não informado"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(19) 99999-0000",
+            "description": "Vazio (\"\") é tratado como não informado"
+          },
+          "email": {
+            "type": "string",
+            "example": "fulano@email.com",
+            "description": "Vazio (\"\") é tratado como não informado"
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "Grande São Paulo",
+              "Campinas",
+              "Baixada Santista",
+              "Vale do Paraíba",
+              "Sorocaba",
+              "Ribeirão Preto"
+            ],
+            "example": "Campinas"
+          }
+        },
+        "required": [
+          "cpf",
+          "fullName",
+          "birthDate",
+          "sex",
+          "bloodType",
+          "region"
         ]
       }
     }
