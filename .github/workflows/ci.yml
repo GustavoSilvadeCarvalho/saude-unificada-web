@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+# Runners fixados no Ubuntu 24.04: o ubuntu-latest está migrando para o Ubuntu 26, cujo kernel
+# (6.19 a 7.0.13) faz o MongoDB 8 se recusar a iniciar (SERVER-121912). Não afeta produção:
+# o Atlas roda no kernel 6.1. Rever quando o MongoDB ou o runner resolverem.
+
 # Um push novo na mesma branch cancela a execução anterior (economiza minutos)
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,7 +24,7 @@ concurrency:
 jobs:
   api:
     name: API — typecheck, testes e cobertura
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -76,7 +80,7 @@ jobs:
 
   docker:
     name: Docker — imagem, compose e teste de fumaça
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
@@ -108,7 +112,7 @@ jobs:
 
   site:
     name: Site — build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
