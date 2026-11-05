@@ -1,4 +1,4 @@
-import { createTestApp, type TestContext } from './helpers.js'
+import { createTestApp, EXTERNAL_MONGODB_URI, type TestContext } from './helpers.js'
 
 describe('Saúde da API', () => {
   let ctx: TestContext
@@ -37,9 +37,9 @@ describe('Saúde da API', () => {
     expect(json.body.paths).toHaveProperty('/api/auth/login')
   })
 
-  // Por último: derruba o banco de propósito
-  it('GET /api/health responde 503 quando o MongoDB cai, e o /live continua 200', async () => {
-    await ctx.replSet.stop()
+  // Por último: derruba o banco de propósito (só dá com o MongoDB em memória)
+  it.skipIf(EXTERNAL_MONGODB_URI)('GET /api/health responde 503 quando o MongoDB cai, e o /live continua 200', async () => {
+    await ctx.replSet?.stop()
 
     const res = await ctx.api().get('/api/health')
     expect(res.status).toBe(503)

@@ -40,7 +40,14 @@ describe('Documentação Swagger', () => {
   it('documenta as rotas implementadas', () => {
     const routes = operations(document).map((o) => o.route)
     expect(routes).toEqual(
-      expect.arrayContaining(['POST /api/auth/login', 'GET /api/auth/me', 'GET /api/health', 'GET /api/health/live']),
+      expect.arrayContaining([
+        'POST /api/auth/login',
+        'GET /api/auth/me',
+        'GET /api/health',
+        'GET /api/health/live',
+        'GET /api/patients/{cpf}',
+        'POST /api/patients',
+      ]),
     )
   })
 
