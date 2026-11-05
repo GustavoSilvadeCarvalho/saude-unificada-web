@@ -69,6 +69,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 - **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Se ECS/ALB estiverem bloqueados no plano Free, trocar para o plano pago (os créditos continuam valendo).
 - **Região us-east-1 (Virgínia do Norte).** O plano era São Paulo (LGPD e latência), mas a conta foi criada pelo novo cadastro da AWS ("projetos", conta `Open Horizons`), cuja SCP gerenciada pela AWS só libera us-east-1, us-west-2 e a região do projeto: em sa-east-1 tudo volta `explicit deny`. us-east-1 é também a mais barata (~US$ 0,042/h com 1 tarefa). No relatório, citar São Paulo como o destino em produção por causa da LGPD.
 - **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública. Por isso o Atlas libera `0.0.0.0/0` (o Fargate não tem IP fixo).
+- **Sem Lambda.** A API roda em contêiner (ECS Fargate). Se a conta bloquear algum serviço, contornar com passos manuais documentados, sem trocar a arquitetura para Lambda.
 - **Esquecer a API ligada 24 h por 3 semanas ≈ US$ 21**: estoura o teto. O orçamento avisa aos 50/80/100% e pela previsão. Rotina: `npm run deploy:api` → testar/gravar → `npm run destroy:api`.
 - **Limites do Atlas Free:** 512 MB, 100 operações/s, 500 conexões. O teste de carga mira principalmente o **login** (bcrypt gasta CPU e faz 1 leitura no banco): a CPU da API sobe e dispara o auto scaling sem estourar o limite do Atlas.
 
@@ -81,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) e **bloco 12** (infraestrutura AWS em `infra/`, falta o primeiro deploy na conta) prontos. Próximos: **bloco 13** (testes de qualidade e carga), **bloco 14** (integração) e o **app mobile**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) **bloco 12** (infraestrutura AWS em `infra/`, falta o primeiro deploy na conta) e **bloco 13** (`tests/`, helmet, compression, limite de login, CORS, `npm audit` zerado; faltam só as rodadas de carga na AWS) prontos. Próximos: **deploy na AWS** (a conta foi liberada em 05/11 com "Ativar recursos avançados"; reconfigurar e testar), **bloco 14** (integração) e o **app mobile**.
 
 ```
 backend/
@@ -324,24 +325,21 @@ Detalhes, custos e passo a passo no Windows: [`docs/infraestrutura.md`](infraest
 - Mudanças em relação ao plano original: sem EC2 fixa (a API inteira é a stack sob demanda, mais barata e já mostra o scaling); sem `deploy.yml` (o deploy é `npm run deploy` da máquina do Matheus, sem credencial da AWS no GitHub); SSM em vez do Secrets Manager (grátis).
 - **Falta fazer na AWS de verdade:** criar a conta/IAM, o Atlas M0, os parâmetros do SSM, `cdk bootstrap` e o primeiro deploy, rodar o seed no Atlas + S3 e o teste de carga, guardar os prints do dashboard e do scaling para o bloco 13.
 
-### Bloco 13 — Pasta `tests/` (Qualidade) → `test: plano de testes, testes de carga e relatórios`
-O manual exige a pasta `/tests` na raiz com relatórios e evidências. Os testes de código continuam em `backend/test/`; a raiz organiza a parte de qualidade:
-
-```
-tests/
-├─ README.md                  como rodar cada tipo de teste e onde estão as evidências
-├─ plano-de-testes.md         escopo, estratégia, tipos de teste, ambiente, critérios de aceite, casos de teste (tabela RF → caso → resultado)
-├─ carga/                     scripts k6: login, busca de prontuário, registro de atendimento
-├─ seguranca/                 casos: sem token, perfil errado, token adulterado, injeção NoSQL, upload proibido, CORS
-└─ relatorios/                resultados dos e2e, cobertura, k6 (antes/depois, 1 vs 3 instâncias), prints do CloudWatch e do CI
-```
-
-- Testes não funcionais:
-  - **desempenho**: tempo de resposta p95;
-  - **carga e escalabilidade**: k6 contra a AWS com o auto scaling ligado;
-  - **segurança**: os casos listados em `seguranca/`;
-  - **disponibilidade**: health check e alarmes.
-- Otimizações da Fase 5 com evidência: índices no Mongo, paginação, compressão (`compression`), rate limit no login (`@nestjs/throttler`) e `helmet`.
+### ✅ Bloco 13 — Qualidade e segurança (pasta `tests/`)
+- `backend`:
+  - `helmet` com CSP compatível com o Swagger;
+  - `compression`;
+  - `TRUST_PROXY` (AWS = 2: CloudFront + ALB);
+  - limite de tentativas com `@nestjs/throttler` no login do site, login do app e primeiro acesso: 5/min por IP + conta, 30/min por IP, via `LOGIN_RATE_LIMIT` / `LOGIN_RATE_LIMIT_IP`, e 0 desliga. Os testes desligam por padrão, e `createTestApp(env)` liga.
+- `test/security.e2e-spec.ts`: cabeçalhos, CORS, compressão e limite de login.
+- `npm audit` zerado na API (`overrides` do `minimatch` no `@nestjs/cli`) e no site (Vite 8.3.6). Na infra, risco aceito: o `minimatch` vem empacotado no `aws-cdk-lib`.
+- `infra`: a API recebe `TRUST_PROXY=2` e o limite de login. `-c loginRateLimit=false` desliga o limite só para o teste de carga.
+- `tests/`:
+  - `plano-de-testes.md` (estratégia, critérios, rastreabilidade RF/RNF → teste, roteiro manual do site M01–M10);
+  - `seguranca/casos-de-seguranca.md` (S01–S50 por OWASP);
+  - `carga/README.md` (cenários C01–C04);
+  - `relatorios/` com o relatório de 05/11 (213 testes, 96,9% de linhas, carga local 16,9 req/s com p95 de 664 ms), JUnit, cobertura e carga local.
+- **Falta:** os cenários C02–C04 (carga e auto scaling) e a fumaça na AWS depois do deploy. Guardar os JSON e os prints em `tests/relatorios/` e preencher um relatório novo com a data da rodada.
 
 ### Bloco 14 — Integração e documentação → `docs: README da API, arquitetura e integração`
 - Ligar o site na API: `frontend/.env` com `VITE_USE_MOCK=false` e `VITE_API_URL` apontando para a API (local e AWS). Testar as telas de ponta a ponta.

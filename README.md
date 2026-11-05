@@ -13,6 +13,7 @@ Projeto Integrador do curso de Desenvolvimento de Software Multiplataforma (DSM)
 | [`backend/`](backend) | API usada pelo site e pelo app | NestJS, MongoDB (Mongoose), JWT |
 | [`mobile/`](mobile) | App dos pacientes | React Native |
 | [`infra/`](infra) | Infraestrutura na AWS como código | AWS CDK (TypeScript) |
+| [`tests/`](tests) | Plano de testes, casos de segurança, roteiro de carga e relatórios de qualidade | — |
 | [`docs/`](docs) | Contrato da API e documentação | — |
 
 O contrato entre front, app e API está em [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md).
@@ -70,6 +71,8 @@ O [GitHub Actions](.github/workflows/ci.yml) roda em todo push e pull request:
 | Docker | monta a imagem, sobe API + MongoDB com `docker compose` e roda o teste de fumaça |
 | Infra | typecheck, testes das regras da infraestrutura AWS e `cdk synth` |
 | Site | build do front-end |
+
+Plano de testes, casos de segurança (OWASP Top 10), roteiro de carga e relatórios com as evidências de cada rodada: [`tests/`](tests).
 
 ## Nuvem (AWS)
 
