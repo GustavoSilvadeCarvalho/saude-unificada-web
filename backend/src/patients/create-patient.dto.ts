@@ -49,7 +49,10 @@ export class CreatePatientDto {
   @IsEmail({}, { message: 'E-mail inválido.' })
   email?: string
 
+  // A lista do Swagger é a inicial; quem decide se a região existe é a coleção "regions" (PatientsService)
   @ApiProperty({ enum: REGIONS, example: 'Campinas' })
-  @IsIn(REGIONS, { message: 'Região inválida.' })
+  @Trim()
+  @IsString({ message: 'Informe a região.' })
+  @IsNotEmpty({ message: 'Informe a região.' })
   region: string
 }

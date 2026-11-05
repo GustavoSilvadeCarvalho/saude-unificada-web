@@ -1,9 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import type { Model } from 'mongoose'
 import { Appointment } from '../appointments/appointment.schema.js'
 import { AuditService } from '../audit/audit.service.js'
 import type { AuthUser } from '../common/roles.js'
+import { INVALID_REGION, RegionsService } from '../regions/regions.service.js'
 import { UsersService } from '../users/users.service.js'
 import type { CreatePatientDto } from './create-patient.dto.js'
 import { Patient, type PatientDocument } from './patient.schema.js'
@@ -21,6 +22,7 @@ export class PatientsService {
     @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>,
     private readonly auditService: AuditService,
     private readonly usersService: UsersService,
+    private readonly regionsService: RegionsService,
   ) {}
 
   /** Prontuário unificado. 404 se o CPF não existir (o front usa isso para oferecer o cadastro) */
@@ -33,6 +35,8 @@ export class PatientsService {
   }
 
   async create(data: CreatePatientDto, user: AuthUser) {
+    if (!(await this.regionsService.exists(data.region))) throw new BadRequestException(INVALID_REGION)
+
     let patient: PatientDocument
     try {
       patient = await this.patientModel.create(data)
