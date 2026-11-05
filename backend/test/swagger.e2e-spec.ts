@@ -49,6 +49,8 @@ describe('Documentação Swagger', () => {
         'POST /api/patients',
         'GET /api/appointments',
         'POST /api/appointments',
+        'POST /api/appointments/{id}/documents',
+        'GET /api/appointments/{id}/documents/{documentId}/download',
       ]),
     )
   })

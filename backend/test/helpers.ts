@@ -1,5 +1,8 @@
 import 'reflect-metadata'
 import { randomUUID } from 'node:crypto'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { INestApplication } from '@nestjs/common'
 import { getConnectionToken } from '@nestjs/mongoose'
 import { Test } from '@nestjs/testing'
@@ -10,6 +13,7 @@ import { AppModule } from '../src/app.module.js'
 import { configureApp } from '../src/app.setup.js'
 import { runSeed } from '../src/database/seed.js'
 import { SEED_PASSWORD } from '../src/database/seed-data.js'
+import { StorageService } from '../src/storage/storage.service.js'
 
 export const TEST_JWT_SECRET = 'segredo-de-teste'
 
@@ -24,6 +28,8 @@ export interface TestContext {
   connection: Connection
   /** Só existe com o MongoDB em memória */
   replSet?: MongoMemoryReplSet
+  /** Pasta temporária dos arquivos enviados (driver local), apagada no fim */
+  uploadDir: string
   /** Cliente HTTP (supertest) apontando para a API de teste */
   api: () => ReturnType<typeof request>
   /** Faz login com um usuário do seed e devolve o token */
@@ -55,6 +61,9 @@ export async function createTestApp(): Promise<TestContext> {
   }
   process.env.JWT_SECRET = TEST_JWT_SECRET
   process.env.SWAGGER_ENABLED = 'true'
+  const uploadDir = await mkdtemp(join(tmpdir(), 'saude-unificada-uploads-'))
+  process.env.STORAGE_DRIVER = 'local'
+  process.env.UPLOAD_DIR = uploadDir
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
   const app = moduleRef.createNestApplication({ logger: false })
@@ -62,7 +71,7 @@ export async function createTestApp(): Promise<TestContext> {
   await app.init()
 
   const connection = app.get<Connection>(getConnectionToken())
-  await runSeed(connection)
+  await runSeed(connection, { storage: app.get(StorageService) })
 
   const api = () => request(app.getHttpServer())
 
@@ -81,7 +90,8 @@ export async function createTestApp(): Promise<TestContext> {
     // Se o banco já foi derrubado (teste de indisponibilidade), não espera o Mongoose para sempre
     await Promise.race([app.close(), new Promise((resolve) => setTimeout(resolve, 5000))])
     await replSet?.stop()
+    await rm(uploadDir, { recursive: true, force: true })
   }
 
-  return { app, connection, replSet, api, login, loginUser, close }
+  return { app, connection, replSet, uploadDir, api, login, loginUser, close }
 }

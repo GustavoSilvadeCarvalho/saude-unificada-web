@@ -75,8 +75,12 @@ describe('Atendimentos', () => {
       expect(list.every((a) => a.doctorId === rafael.id)).toBe(true)
       expect(list.map((a) => a.date)).toEqual([...list.map((a) => a.date)].sort())
       expect(list.filter((a) => a.status === 'agendado')).toHaveLength(4)
-      expect(list[0]).toMatchObject({ documents: [] })
+      expect(list.every((a) => Array.isArray(a.documents))).toBe(true)
       expect(list[0]).not.toHaveProperty('_id')
+      // Documentos do seed saem sem a chave interna do armazenamento
+      const documents = list.flatMap((a) => a.documents as Record<string, unknown>[])
+      expect(documents.length).toBeGreaterThan(0)
+      expect(documents.every((d) => !('storageKey' in d) && typeof d.id === 'string')).toBe(true)
     })
 
     it('responde 403 na agenda de outro médico', async () => {
