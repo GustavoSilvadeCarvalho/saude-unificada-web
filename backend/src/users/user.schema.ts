@@ -16,7 +16,7 @@ export class User {
   @Prop({ required: true, select: false })
   passwordHash: string
 
-  @Prop({ required: true, enum: USER_ROLES })
+  @Prop({ required: true, type: String, enum: USER_ROLES })
   role: UserRole
 
   /** Apenas médicos, ex.: "CRM-SP 123456" */
