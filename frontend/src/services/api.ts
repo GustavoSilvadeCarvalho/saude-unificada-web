@@ -1,7 +1,7 @@
 // Camada única de acesso a dados.
 // Cada função verifica VITE_USE_MOCK: se "true", usa os dados de src/mocks com um
 // pequeno atraso simulado; se "false", faz a requisição para VITE_API_URL.
-// Os endpoints usados aqui estão documentados em API_CONTRACT.md.
+// Os endpoints usados aqui estão documentados em docs/API_CONTRACT.md (raiz do monorepo).
 
 import { db, persistDb } from '../mocks/db'
 import { REGIONS, mockRegionalData } from '../mocks/regional'
