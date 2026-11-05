@@ -8,6 +8,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import mongoose from 'mongoose'
 import { loadEnvFile } from './common/env.js'
 import { runSeed } from './database/seed.js'
+import { createStorage } from './storage/storage.factory.js'
 
 loadEnvFile()
 process.env.JWT_SECRET ??= 'segredo-de-desenvolvimento'
@@ -19,7 +20,7 @@ const replSet = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEn
 process.env.MONGODB_URI = replSet.getUri('saude-unificada')
 
 const connection = await mongoose.createConnection(process.env.MONGODB_URI).asPromise()
-const result = await runSeed(connection)
+const result = await runSeed(connection, { storage: createStorage(process.env) })
 await connection.close()
 logger.log(
   `Seed aplicado: ${result.users} usuários (senha de todos: 123456), ${result.patients} pacientes e ${result.appointments} atendimentos.`,

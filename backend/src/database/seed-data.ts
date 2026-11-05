@@ -233,6 +233,8 @@ export interface SeedAppointment {
   status: 'realizado' | 'agendado'
   reason: string
   summary: string
+  /** Documentos anexados (o seed grava um PDF de demonstração para cada um) */
+  documents?: { fileName: string; type: 'receita' | 'laudo' | 'exame' | 'outro'; minutesAfter: number }[]
 }
 
 const RAFAEL = 'medico@teste.com'
@@ -251,11 +253,13 @@ export const seedAppointments: SeedAppointment[] = [
     patient: 'maria', doctorEmail: RAFAEL, daysFromNow: -60, hour: 9, status: 'realizado',
     reason: 'Rotina — diabetes e hipertensão',
     summary: 'PA 132/84 mmHg. Glicemia de jejum 148 mg/dL. Solicitados HbA1c e perfil lipídico. Reforçadas orientações alimentares.',
+    documents: [{ fileName: 'pedido_exames_maria.pdf', type: 'outro', minutesAfter: 40 }],
   },
   {
     patient: 'ana', doctorEmail: RAFAEL, daysFromNow: -41, hour: 11, status: 'realizado',
     reason: 'Cansaço e tontura',
     summary: 'Queixa de fadiga há 2 meses. Hemograma evidenciou anemia ferropriva leve. Iniciado sulfato ferroso. Retorno em 6 semanas.',
+    documents: [{ fileName: 'receita_sulfato_ferroso.pdf', type: 'receita', minutesAfter: 30 }],
   },
   {
     patient: 'pedro', doctorEmail: RAFAEL, daysFromNow: -25, hour: 16, status: 'realizado',
@@ -266,10 +270,12 @@ export const seedAppointments: SeedAppointment[] = [
     patient: 'beatriz', doctorEmail: RAFAEL, daysFromNow: -12, hour: 10, status: 'realizado',
     reason: 'Orientação sobre alergia alimentar',
     summary: 'Revisado plano de ação para anafilaxia com a responsável. Renovada prescrição de adrenalina autoinjetável.',
+    documents: [{ fileName: 'plano_anafilaxia_beatriz.pdf', type: 'laudo', minutesAfter: 25 }],
   },
   {
     patient: 'carlos', doctorEmail: CAMILA, daysFromNow: -160, hour: 14, status: 'realizado',
     reason: 'Retorno pós-angioplastia',
     summary: 'Assintomático. Ecocardiograma com FE 52%. Mantida terapia antiplaquetária e estatina de alta potência.',
+    documents: [{ fileName: 'laudo_ecocardiograma.pdf', type: 'laudo', minutesAfter: 30 }],
   },
 ]
