@@ -1,0 +1,343 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "description": "Devolve o token JWT e os dados do usuário. A senha nunca aparece na resposta.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "E-mail em formato inválido ou senha vazia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Informe um e-mail válido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail ou senha inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "E-mail ou senha inválidos."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login de profissional de saúde ou gestor",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dados do usuário logado",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Responde 200 com tudo funcionando e 503 se o MongoDB estiver fora. Usado pelos alarmes do CloudWatch.",
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MongoDB fora do ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Status da API e do MongoDB",
+        "tags": [
+          "Saúde"
+        ]
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "description": "Usado pelo health check do load balancer: uma queda rápida do MongoDB não deve fazer a AWS derrubar e recriar as instâncias da API.",
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A API está de pé (não consulta o banco)",
+        "tags": [
+          "Saúde"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Saúde Unificada — API",
+    "description": "API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pelo site (médicos e gestores) e pelo app (pacientes).\n\n**Como testar por aqui**\n1. Abra *Autenticação → POST /api/auth/login* e clique em **Execute** (o exemplo já vem com o médico de teste).\n2. Copie o `token` da resposta, clique em **Authorize** (cadeado no topo) e cole o token.\n3. As outras rotas passam a mandar o token automaticamente (ele fica salvo mesmo se a página recarregar).\n\n**Usuários de teste** (ambiente de desenvolvimento e demonstração), senha `123456`:\n- `medico@teste.com`: médico (Clínica Médica)\n- `cardio@teste.com`: médica (Cardiologia)\n- `gestor@teste.com`: gestora pública\n\nErros sempre voltam como `{ \"statusCode\": 401, \"message\": \"...\" }`, com a mensagem em português.\nContrato completo: `docs/API_CONTRACT.md`.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Autenticação",
+      "description": "Login e dados do usuário logado"
+    },
+    {
+      "name": "Saúde",
+      "description": "Status da API e do banco (monitoramento e load balancer)"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Token devolvido pelo login"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "medico@teste.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "email": {
+            "type": "string",
+            "example": "medico@teste.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "medico",
+              "gestor"
+            ],
+            "example": "medico"
+          },
+          "crm": {
+            "type": "string",
+            "example": "CRM-SP 123456",
+            "description": "Só para médicos"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica",
+            "description": "Só para médicos"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(11) 3456-7890"
+          },
+          "institution": {
+            "type": "string",
+            "example": "UBS Vila Mariana",
+            "description": "Unidade de saúde (médico) ou órgão (gestor)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "description": "JWT para o header Authorization"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "token",
+          "user"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 401
+          },
+          "message": {
+            "type": "string",
+            "example": "E-mail ou senha inválidos.",
+            "description": "Mensagem em português, exibida ao usuário"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "erro"
+            ],
+            "example": "ok"
+          },
+          "mongodb": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "example": "up",
+            "description": "Conexão com o MongoDB"
+          },
+          "uptimeSeconds": {
+            "type": "number",
+            "example": 3600,
+            "description": "Segundos desde que a API subiu"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-11-05T03:00:00.000Z"
+          }
+        },
+        "required": [
+          "status",
+          "mongodb",
+          "uptimeSeconds",
+          "timestamp"
+        ]
+      },
+      "LiveResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      }
+    }
+  }
+}

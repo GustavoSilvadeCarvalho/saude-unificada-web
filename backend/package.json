@@ -9,6 +9,7 @@
     "dev": "nest start --watch",
     "dev:memory": "nest start --watch --entryFile dev-memory",
     "seed": "nest build && node dist/database/seed.js",
+    "openapi": "nest build && node dist/openapi.js",
     "typecheck": "tsc --noEmit",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
   },
