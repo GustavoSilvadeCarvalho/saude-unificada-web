@@ -82,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes) e **bloco 6** (pacientes e auditoria) prontos. Próximo: **bloco 7**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) e **bloco 7** (atendimentos) prontos. Próximo: **bloco 8** (documentos no S3).
 
 ```
 backend/
@@ -97,7 +97,7 @@ backend/
 │  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
 │  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
 │  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
-│  ├─ app.module.ts        Config, Mongoose, Users, Auth, Health, Patients
+│  ├─ app.module.ts        Config, Mongoose, Users, Auth, Health, Patients, Appointments
 │  ├─ common/
 │  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
 │  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
@@ -105,6 +105,7 @@ backend/
 │  │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
 │  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
 │  │  ├─ error-response.ts ErrorResponse (Swagger)
+│  │  ├─ validation.ts     validationExceptionFactory: mensagens legíveis ("Alergia 2: ...") no ValidationPipe
 │  │  ├─ env.ts            loadEnvFile() para scripts fora do Nest
 │  │  ├─ current-user.decorator.ts, transforms.ts (@EmptyToUndefined, @Trim, @Digits)
 │  │  └─ http-exception.filter.ts   erro = { statusCode, message } em português; E11000 → 409
@@ -112,9 +113,10 @@ backend/
 │  ├─ auth/                POST /auth/login, GET /auth/me; AuthGuard global (JWT + @Roles)
 │  ├─ health/              GET /health (API + MongoDB, 503 se o banco cair), GET /health/live (load balancer)
 │  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
-│  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf e POST /patients (só medico, auditados)
-│  └─ database/            seed-data.ts (usuários e pacientes dos mocks) e seed.ts (runSeed)
-└─ test/                   helpers.ts (createTestApp, login) + e2e de auth, health, patients, swagger; cpf.spec.ts (unitário)
+│  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf (com appointmentSummaries) e POST /patients (só medico, auditados)
+│  ├─ appointments/        schema (com documents[]), GET /appointments?doctorId|patientCpf, POST /appointments (transação: atendimento + prontuário + auditoria)
+│  └─ database/            seed-data.ts (usuários, pacientes e atendimentos dos mocks), seed.ts (runSeed), transaction.runner.ts (TransactionRunner)
+└─ test/                   helpers.ts (createTestApp, login, loginUser) + e2e de auth, health, patients, appointments, swagger; cpf.spec.ts (unitário)
 ```
 
 - Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
@@ -194,7 +196,12 @@ Plano original:
 - Auditoria (LGPD; o requisito não funcional fala em auditoria de acessos): módulo `audit` grava quem acessou cada prontuário (userId, action, patientCpf, data).
 - Seed: pacientes. Testes: 404, 201, 409, 400, gestor recebe 403.
 
-### Bloco 7 — Atendimentos → `feat(backend): registro de atendimentos com atualização do prontuário`
+### ✅ Bloco 7 — Atendimentos (em 8 commits)
+- Feito como planejado, mais: regras de data/resumo iguais às do formulário do site, remarcação de agendamento, agendamento de outro médico (403) ou de outro paciente (400), 409 se já registrado, CID-10 validado, auditoria `appointments.view` e `appointment.create`, mensagens legíveis em erros de lista.
+- `TransactionRunner` (`src/database/transaction.runner.ts`): `MONGODB_TRANSACTIONS=false` desliga a transação **só** para banco sem replica set (é como o Claude roda os testes no FerretDB).
+- Documentos ainda não entram no seed (sem arquivo para baixar); ficam para o bloco 8.
+
+Plano original:
 - Schema Appointment:
   - patientCpf, patientName, doctorId (ObjectId), doctorName, date (Date), status (`realizado|agendado`), reason?, summary;
   - documents [{fileName, type, uploadedAt, storageKey, mimeType, size}].
@@ -223,6 +230,7 @@ Plano original:
   - conferir a codificação de nome de arquivo com acento (o multer pode entregar em latin1).
 - `GET /appointments/:id/documents/:documentId/file`: no S3, redireciona para uma URL pré-assinada; no driver local, faz stream do arquivo.
 - Testes com o driver local: upload ok, tipo de arquivo proibido (400), arquivo grande demais (413), outro médico (403).
+- Seed: anexar aos atendimentos os documentos dos mocks (`frontend/src/mocks/appointments.ts`), gravando PDFs de exemplo no armazenamento para o download funcionar na demo.
 
 ### Bloco 9 — Painel do gestor → `feat(backend): dados regionais para o painel do gestor`
 - Coleções:

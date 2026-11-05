@@ -164,13 +164,16 @@ Objeto `Appointment`:
 - `status`: `"realizado"` | `"agendado"`
 - `documents[].type`: `"receita"` | `"laudo"` | `"exame"` | `"outro"`
 
+Todas as rotas de atendimento são só do perfil `medico` (gestor recebe `403`).
+
 ### `GET /appointments?doctorId=:id`
 
 Lista os atendimentos (agendados e realizados) do médico. Ordem: data crescente. O front separa "próximos" (`agendado`) e "passados" (`realizado`).
+Só o próprio médico: `doctorId` de outro médico dá `403`. Sem filtro, ou com `doctorId` e `patientCpf` juntos: `400`.
 
 ### `GET /appointments?patientCpf=:cpf`
 
-Lista os atendimentos do paciente (de todos os médicos). Ordem: data decrescente. Usado para a lista de documentos e agendamentos no prontuário.
+Lista os atendimentos do paciente (de todos os médicos). Ordem: data decrescente. Usado para a lista de documentos e agendamentos no prontuário. O acesso é registrado na auditoria.
 
 ### `POST /appointments`
 
@@ -201,9 +204,25 @@ Requisição:
 
 Regras:
 
-- `scheduledAppointmentId` (opcional): se informado, o backend **atualiza** esse agendamento (status, data, resumo) em vez de criar outro.
-- Itens de `newAllergies`, `newMedications` e `newConditions` são **adicionados** às listas do paciente (o backend gera os `id`).
+- `scheduledAppointmentId` (opcional): se informado, o backend **atualiza** esse agendamento (status, data, resumo) em vez de criar outro. Sem `reason` novo, mantém o do agendamento. Com `status: "agendado"`, remarca.
+- Itens de `newAllergies`, `newMedications` e `newConditions` são **adicionados** às listas do paciente (o backend gera os `id`). `prescribedBy` vazio vira o nome do médico. CID gravado em maiúsculas.
 - Com `status: "agendado"` as três listas chegam vazias e `summary` pode ser vazio.
+- Atendimento, prontuário e auditoria são gravados numa **transação** (tudo ou nada).
+
+Regras (as mesmas do formulário do site; violá-las dá `400` com a mensagem):
+
+| Regra | Mensagem |
+|---|---|
+| `doctorId` tem que ser o do médico logado | `403` Você só pode registrar atendimentos em seu próprio nome. |
+| Realizado não pode ter data no futuro (folga de 5 min) | Um atendimento realizado não pode ter data no futuro. |
+| Realizado precisa de resumo com 10+ caracteres | Descreva o atendimento (mínimo de 10 caracteres). |
+| Agendado precisa de data no futuro | Um agendamento precisa ter data no futuro. |
+| Agendado não muda o prontuário | Um agendamento não altera o prontuário: ... |
+| `date` em ISO 8601 | Data e hora inválidas. Use o formato ISO 8601. |
+| CID no formato CID-10 (ex.: `I10`, `J45.0`) | Condição 1: CID inválido. ... |
+
+Erros dentro das listas dizem qual item: `"Alergia 2: Informe a substância da alergia."`.
+Outros erros: `404` paciente ou agendamento não encontrado; `403` agendamento de outro médico; `400` agendamento de outro paciente; `409` agendamento já registrado.
 
 Resposta `201`: o `Appointment` criado/atualizado (com `documents` como array, mesmo que vazio).
 
