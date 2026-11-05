@@ -114,10 +114,10 @@ backend/
 │  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
 │  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf e POST /patients (só medico, auditados)
 │  └─ database/            seed-data.ts (usuários e pacientes dos mocks) e seed.ts (runSeed)
-└─ test/                   helpers.ts (createTestApp, login) + auth, health, patients, swagger
+└─ test/                   helpers.ts (createTestApp, login) + e2e de auth, health, patients, swagger; cpf.spec.ts (unitário)
 ```
 
-- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks (`SEED_CPFS`).
+- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
 - Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código
@@ -131,6 +131,8 @@ backend/
   - datas `AAAA-MM-DD` e data/hora em ISO;
   - CPF só com dígitos.
 - `@Prop` de campo com tipo união (ex.: `role: UserRole`, `status: 'ativa' | ...`) precisa de `type: String` explícito: nos testes o Vitest não gera o tipo de uniões e o Mongoose quebra.
+- **CPF:** validado só por regras, sem consulta externa (`cpfProblem` em `common/cpf.ts`): formato `22916926402` ou `229.169.264-02`, dígitos verificadores, 11 dígitos iguais recusados e CPFs de exemplo conhecidos (`12345678909`, `11144477735`...) recusados com mensagem própria. No DTO: `@NormalizeCpf() @IsCpf()`; na URL: `ParseCpfPipe`.
+- **Nada de CPF sequencial ou de exemplo em seed, testes ou Swagger:** usar CPFs fictícios gerados aleatoriamente (`SEED_CPFS` e os do `test/patients.e2e-spec.ts`). Os mocks do front ainda usam `123.456.789-09` etc.; avisar o Gustavo (no modo API o site usa os dados do seed).
 - Erros: lançar `NotFoundException('...')`, `ForbiddenException('...')` etc. com mensagem própria; o filtro cuida do formato.
 - Configuração sempre por variável de ambiente (`ConfigService`), nunca fixa no código. A API precisa ser **stateless** (nada gravado em disco ou memória do servidor), para escalar em várias instâncias na AWS.
 - Versões:

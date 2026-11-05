@@ -11,7 +11,7 @@ Os tipos TypeScript equivalentes estão em [`frontend/src/types/index.ts`](../fr
 | Formato | JSON (`Content-Type: application/json`), exceto upload de arquivos (`multipart/form-data`) |
 | Autenticação | `Authorization: Bearer <token>` em todas as rotas, exceto `POST /auth/login` |
 | Nomes de campos | camelCase, em inglês (glossário no fim do documento) |
-| CPF | Sempre **só dígitos**, 11 caracteres (ex.: `"12345678909"`). A máscara é feita no front |
+| CPF | Sempre **só dígitos**, 11 caracteres (ex.: `"22916926402"`). A máscara é feita no front. A API recusa (400) CPF com dígitos verificadores errados, com os 11 dígitos iguais ou que seja um CPF de exemplo conhecido (`12345678909`, `11144477735`...) |
 | Datas | `AAAA-MM-DD` para datas (ex.: nascimento); ISO 8601 completo para data/hora (ex.: `"2026-10-01T14:30:00.000Z"`) |
 | Mês (dados regionais) | `AAAA-MM` |
 | IDs | string |
@@ -80,7 +80,7 @@ Resposta `200`:
 
 ```json
 {
-  "cpf": "12345678909",
+  "cpf": "22916926402",
   "fullName": "Maria Aparecida da Silva",
   "birthDate": "1958-03-14",
   "sex": "F",
@@ -124,7 +124,7 @@ Requisição:
 
 ```json
 {
-  "cpf": "11144477735",
+  "cpf": "81646027876",
   "fullName": "Fulano de Tal",
   "birthDate": "1990-05-10",
   "sex": "M",
@@ -147,7 +147,7 @@ Objeto `Appointment`:
 ```json
 {
   "id": "at-101",
-  "patientCpf": "12345678909",
+  "patientCpf": "22916926402",
   "patientName": "Maria Aparecida da Silva",
   "doctorId": "u-medico-1",
   "doctorName": "Dr. Rafael Moreira Lima",
@@ -181,7 +181,7 @@ Requisição:
 ```json
 {
   "scheduledAppointmentId": "at-101",
-  "patientCpf": "12345678909",
+  "patientCpf": "22916926402",
   "doctorId": "u-medico-1",
   "date": "2026-10-01T14:30:00.000Z",
   "status": "realizado",
