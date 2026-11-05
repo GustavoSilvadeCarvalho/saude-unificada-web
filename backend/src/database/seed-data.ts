@@ -1,7 +1,6 @@
 // Dados iniciais do banco, copiados dos mocks do front (frontend/src/mocks/).
 // Os ids fixos dos mocks (u-medico-1, al-1...) não vêm junto: o MongoDB gera os próprios.
 
-import { completeCpf } from '../common/cpf.js'
 import type { UserRole } from '../common/roles.js'
 import type { Patient } from '../patients/patient.schema.js'
 
@@ -48,14 +47,16 @@ export const seedUsers: SeedUser[] = [
 
 /* ---------- Pacientes (frontend/src/mocks/patients.ts) ---------- */
 
-// CPFs fictícios, mas válidos (dígitos verificadores calculados)
+// CPFs fictícios gerados aleatoriamente (dígitos verificadores válidos, sem sequências
+// nem CPFs de exemplo). Qualquer CPF válido pode coincidir com o de alguém, por isso
+// estes dados existem só para desenvolvimento, testes e demonstração.
 export const SEED_CPFS = {
-  maria: completeCpf('123456789'),
-  joao: completeCpf('987654321'),
-  ana: completeCpf('456123789'),
-  carlos: completeCpf('321654987'),
-  beatriz: completeCpf('741852963'),
-  pedro: completeCpf('159357486'),
+  maria: '22916926402',
+  joao: '27952204408',
+  ana: '50717927296',
+  carlos: '86174860825',
+  beatriz: '97077695999',
+  pedro: '23130980369',
 }
 
 export const seedPatients: Patient[] = [
