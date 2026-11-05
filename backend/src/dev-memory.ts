@@ -21,7 +21,7 @@ process.env.MONGODB_URI = replSet.getUri('saude-unificada')
 const connection = await mongoose.createConnection(process.env.MONGODB_URI).asPromise()
 const result = await runSeed(connection)
 await connection.close()
-logger.log(`Seed aplicado: ${result.users} usuários (senha de todos: 123456).`)
+logger.log(`Seed aplicado: ${result.users} usuários (senha de todos: 123456) e ${result.patients} pacientes.`)
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.once(signal, async () => {

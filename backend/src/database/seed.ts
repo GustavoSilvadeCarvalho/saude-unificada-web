@@ -1,15 +1,19 @@
 import 'reflect-metadata'
 import { pathToFileURL } from 'node:url'
 import bcrypt from 'bcryptjs'
-import mongoose, { type Connection, type Model } from 'mongoose'
+import mongoose, { type Connection, type Model, type Schema } from 'mongoose'
+import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema.js'
 import { loadEnvFile } from '../common/env.js'
+import { Patient, PatientSchema } from '../patients/patient.schema.js'
 import { User, UserSchema } from '../users/user.schema.js'
-import { SEED_PASSWORD, seedUsers } from './seed-data.js'
+import { SEED_PASSWORD, seedPatients, seedUsers } from './seed-data.js'
 
-/** Reaproveita o model se a conexão já tiver um (caso dos testes, que usam a conexão do Nest) */
-function getUserModel(connection: Connection): Model<User> {
-  const existing = connection.models[User.name] as Model<User> | undefined
-  return existing ?? (connection.model(User.name, UserSchema) as unknown as Model<User>)
+/**
+ * Reaproveita o model se a conexão já tiver um (caso dos testes, que usam a conexão do Nest).
+ * Sem genéricos de propósito: os tipos do Mongoose com genérico estouram a memória do tsc.
+ */
+function getModel(connection: Connection, name: string, schema: Schema): Model<any> {
+  return connection.models[name] ?? (connection.model(name, schema) as unknown as Model<any>)
 }
 
 /**
@@ -17,14 +21,23 @@ function getUserModel(connection: Connection): Model<User> {
  * Usado pelo `npm run seed`, pelo `npm run dev:memory` e pelos testes e2e.
  */
 export async function runSeed(connection: Connection) {
-  const userModel = getUserModel(connection)
-  await userModel.init() // garante os índices (ex.: e-mail único)
+  const userModel = getModel(connection, User.name, UserSchema)
+  const patientModel = getModel(connection, Patient.name, PatientSchema)
+  const auditModel = getModel(connection, AuditLog.name, AuditLogSchema)
+  // Garante os índices (ex.: e-mail e CPF únicos) antes de inserir
+  await Promise.all([userModel.init(), patientModel.init(), auditModel.init()])
 
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10)
   await userModel.deleteMany({})
   await userModel.insertMany(seedUsers.map((user) => ({ ...user, passwordHash })))
 
-  return { users: seedUsers.length }
+  await patientModel.deleteMany({})
+  await patientModel.insertMany(seedPatients)
+
+  // A trilha de auditoria começa vazia a cada seed
+  await auditModel.deleteMany({})
+
+  return { users: seedUsers.length, patients: seedPatients.length }
 }
 
 // Execução direta: npm run seed (usa o MONGODB_URI do .env)
@@ -39,7 +52,9 @@ if (isMain) {
   const connection = await mongoose.createConnection(uri).asPromise()
   try {
     const result = await runSeed(connection)
-    console.log(`Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}).`)
+    console.log(
+      `Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}) e ${result.patients} pacientes.`,
+    )
   } finally {
     await connection.close()
   }
