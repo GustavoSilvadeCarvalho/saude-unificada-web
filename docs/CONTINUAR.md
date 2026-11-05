@@ -82,14 +82,16 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor) e **bloco 10** (paciente no app, login por CPF) prontos. Próximo: **bloco 11** (Docker e CI) e o **app mobile**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF) e **bloco 11** (Docker e CI) prontos. Próximos: **bloco 12** (AWS) e o **app mobile**.
 
 ```
 backend/
-├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e
+├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e, test:cov, test:ci
+├─ Dockerfile              multi-stage (build → deps de produção → runtime node:24-slim, usuário node, HEALTHCHECK em /api/health/live)
+├─ scripts/smoke-test.mjs  teste de fumaça contra uma API no ar (local, Docker, AWS): node backend/scripts/smoke-test.mjs <url>
 ├─ tsconfig.json           nodenext, decorators + emitDecoratorMetadata, strict
 ├─ tsconfig.build.json     rootDir ./src (o TS 6 exige rootDir explícito)
-├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts, hookTimeout 120s
+├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts e *.spec.ts; cobertura v8 com mínimo de 90% linhas / 80% branches
 ├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR, SWAGGER_ENABLED
 ├─ src/
 │  ├─ main.ts              bootstrap (porta em PORT)
@@ -284,7 +286,17 @@ Plano original:
   - `GET /me/access-log`: quem acessou o prontuário (LGPD: o paciente acompanha os acessos; usar `AuditService.findByPatient`).
 - Seed: um paciente de teste (ex.: Maria). Testes: paciente só vê os próprios dados e recebe 403 nas rotas de médico.
 
-### Bloco 11 — Docker e CI → `chore(infra): Docker, docker-compose e pipeline de testes no GitHub Actions`
+### ✅ Bloco 11 — Docker e CI (em 7 commits)
+- `backend/Dockerfile` multi-stage (Node 24 slim, não-root, `npm ci --ignore-scripts` para não baixar o MongoDB dos testes, HEALTHCHECK em `/api/health/live`) e `.dockerignore`.
+- `docker-compose.yml` na raiz: `mongo:8` como replica set `rs0` (o health check inicia o replica set e só libera quando o nó é primário) + API. Seed: `docker compose run --rm api node dist/database/seed.js`.
+- `.github/workflows/ci.yml` (actions v6/v5, que rodam em Node 24): job **API** (typecheck + `npm run test:ci` com cobertura mínima, resumo na página do job e artefato `relatorios-testes-api` com cobertura HTML/lcov + JUnit), job **Docker** (`docker compose up --wait`, seed, teste de fumaça) e job **Site** (build).
+- Cobertura atual: ~97% das linhas, ~88% dos branches.
+- Selo do CI e seção de Docker/testes no README da raiz.
+- Testado de verdade no Docker Desktop do Matheus (05/11): imagem com 101 MB, API e MongoDB saudáveis, seed ok, teste de fumaça 9/9, contêiner rodando como `node`.
+- Esse teste mostrou o aviso "Duplicate DTO: DownloadLinkResponse" do Swagger (a mesma classe criada em dois controllers; vira erro na próxima versão do `@nestjs/swagger`). Corrigido com uma classe só em `appointment.responses.ts`, e o teste do Swagger agora falha se a geração da documentação emitir qualquer aviso.
+- `npm audit` acusa 2 vulnerabilidades moderadas só nas dependências de desenvolvimento (as de produção têm 0). Revisar no bloco 13.
+
+Plano original:
 - `backend/Dockerfile` multi-stage (build → runtime Node slim, usuário não-root) e `.dockerignore`.
 - `docker-compose.yml` na raiz: a API e um MongoDB rodando como replica set (`--replSet rs0` + init), para quem quiser rodar sem `dev:memory`.
 - `.github/workflows/ci.yml`:
