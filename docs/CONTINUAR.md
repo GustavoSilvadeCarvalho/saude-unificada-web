@@ -82,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) e **bloco 7** (atendimentos) prontos. Próximo: **bloco 8** (documentos no S3).
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos) e **bloco 8** (documentos com S3) prontos. Próximo: **bloco 9** (painel do gestor).
 
 ```
 backend/
@@ -97,7 +97,7 @@ backend/
 │  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
 │  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
 │  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
-│  ├─ app.module.ts        Config, Mongoose, Users, Auth, Health, Patients, Appointments
+│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments
 │  ├─ common/
 │  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
 │  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
@@ -106,6 +106,7 @@ backend/
 │  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
 │  │  ├─ error-response.ts ErrorResponse (Swagger)
 │  │  ├─ validation.ts     validationExceptionFactory: mensagens legíveis ("Alergia 2: ...") no ValidationPipe
+│  │  ├─ uploads.ts        detectFileType (PDF/JPG/PNG pelo conteúdo), cleanFileName (acento/latin1), MAX_UPLOAD_BYTES
 │  │  ├─ env.ts            loadEnvFile() para scripts fora do Nest
 │  │  ├─ current-user.decorator.ts, transforms.ts (@EmptyToUndefined, @Trim, @Digits)
 │  │  └─ http-exception.filter.ts   erro = { statusCode, message } em português; E11000 → 409
@@ -114,9 +115,12 @@ backend/
 │  ├─ health/              GET /health (API + MongoDB, 503 se o banco cair), GET /health/live (load balancer)
 │  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
 │  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf (com appointmentSummaries) e POST /patients (só medico, auditados)
-│  ├─ appointments/        schema (com documents[]), GET /appointments?doctorId|patientCpf, POST /appointments (transação: atendimento + prontuário + auditoria)
-│  └─ database/            seed-data.ts (usuários, pacientes e atendimentos dos mocks), seed.ts (runSeed), transaction.runner.ts (TransactionRunner)
-└─ test/                   helpers.ts (createTestApp, login, loginUser) + e2e de auth, health, patients, appointments, swagger; cpf.spec.ts (unitário)
+│  ├─ appointments/        schema (com documents[]), GET /appointments?doctorId|patientCpf, POST /appointments (transação: atendimento + prontuário + auditoria),
+│  │                       POST /appointments/:id/documents (upload) e GET .../documents/:documentId/download (link de 5 min)
+│  ├─ storage/             StorageService (local | s3, por STORAGE_DRIVER), createStorage(env), GET /files/:token (links do driver local)
+│  └─ database/            seed-data.ts (usuários, pacientes, atendimentos e documentos dos mocks), seed.ts (runSeed(connection, { storage })), demo-pdf.ts, transaction.runner.ts
+└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, swagger;
+                           unitários: cpf.spec.ts, uploads.spec.ts, storage.spec.ts
 ```
 
 - Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
@@ -217,7 +221,17 @@ Plano original:
 - Ligar `appointmentSummaries` no GET do paciente: só atendimentos `realizado`, do mais recente ao mais antigo, com a `specialty` do médico.
 - Seed: atendimentos. Testes: agendamento convertido, prontuário atualizado, 403 com outro médico.
 
-### Bloco 8 — Documentos com armazenamento em nuvem → `feat(backend): upload de receitas e laudos com armazenamento no S3`
+### ✅ Bloco 8 — Documentos com armazenamento em nuvem (em 6 commits)
+- Feito como planejado, com uma mudança no download: em vez de redirecionar, `GET /appointments/:id/documents/:documentId/download` devolve `{ url, expiresAt }`.
+  O link vale 5 min e não precisa do token (o site e o app só abrem a URL). No S3 é URL pré-assinada; no driver local, link assinado com HMAC servido por `GET /api/files/:token`.
+- Tipo do arquivo conferido pelos primeiros bytes (não pelo nome); chave no armazenamento = `appointments/<id>/<documentId>.<ext>` (nunca o nome do usuário).
+- S3: `ServerSideEncryption: AES256`; credenciais pela role da AWS, nunca no código. `S3_ENDPOINT` opcional para MinIO/LocalStack.
+- Se a gravação no banco falhar depois do upload, o arquivo é apagado do armazenamento.
+- Exame criado por laudo/exame guarda `appointmentId` e `documentId`. Auditoria: `document.upload` e `document.download`.
+- Seed grava PDFs de demonstração (`demo-pdf.ts`) para os 4 documentos dos mocks.
+- **Para o Gustavo (site):** botão de baixar = `GET .../download` com o token e depois `window.open(body.url)`.
+
+Plano original:
 - Interface `StorageService` com dois drivers, escolhidos pela variável `STORAGE_DRIVER`:
   - `local`: grava em `UPLOAD_DIR`; usado em desenvolvimento e nos testes;
   - `s3`: usa `@aws-sdk/client-s3` com bucket em `S3_BUCKET` e região em `AWS_REGION`.

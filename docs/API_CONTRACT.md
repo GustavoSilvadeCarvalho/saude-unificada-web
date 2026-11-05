@@ -241,7 +241,27 @@ Resposta `201`:
 { "id": "doc-9", "fileName": "receita_amoxicilina.pdf", "type": "receita", "uploadedAt": "2026-10-01T14:41:00.000Z" }
 ```
 
-Sugestão: documentos do tipo `laudo` ou `exame` também geram uma entrada em `exams` do paciente (o mock faz isso).
+Regras:
+
+- Aceita só **PDF, JPG e PNG**, conferidos pelo **conteúdo** do arquivo (um `.exe` renomeado para `.pdf` é recusado): `400` "Formato não aceito. Envie PDF, JPG ou PNG.".
+- Até **10 MB**: acima disso, `413` "Arquivo muito grande. O limite é de 10 MB.".
+- Só o **médico do atendimento** pode enviar (`403`); até 20 documentos por atendimento.
+- Nome com acento é mantido (`laudo_cardiológico.pdf`).
+- `laudo` e `exame` também geram uma entrada em `exams` do paciente (`name: "Laudo anexado"` ou `"Exame anexado"`, `result: "Ver arquivo anexado"`), com `appointmentId` e `documentId` para baixar o arquivo.
+
+### `GET /appointments/:id/documents/:documentId/download`
+
+Link temporário para baixar o arquivo. Qualquer médico pode pedir (o prontuário é unificado); cada pedido fica na auditoria.
+
+Resposta `200`:
+
+```json
+{ "url": "https://...", "expiresAt": "2026-10-01T14:46:00.000Z" }
+```
+
+- A `url` vale **5 minutos** e **não precisa do token**: é só abrir (`window.open(url)` no site, `Linking.openURL(url)` no app).
+- Em produção é uma URL pré-assinada do S3 (o arquivo vai direto do S3 para o usuário). Em desenvolvimento é um link assinado da própria API (`/api/files/...`).
+- `404` se o atendimento ou o documento não existir.
 
 ---
 
