@@ -9,6 +9,8 @@ export const AUDIT_ACTIONS = [
   'patient.create', // cadastrou o paciente
   'appointments.view', // listou o histórico de atendimentos do paciente
   'appointment.create', // registrou ou concluiu um atendimento (e atualizou o prontuário)
+  'document.upload', // anexou receita, laudo etc.
+  'document.download', // gerou link para baixar um documento
 ] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 

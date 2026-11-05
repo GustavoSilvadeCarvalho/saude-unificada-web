@@ -73,6 +73,15 @@ export class ExamResponse {
 
   @ApiPropertyOptional({ example: 'hba1c_jul2026.pdf' })
   fileName?: string
+
+  @ApiPropertyOptional({
+    example: '6729f1c2a3b4c5d6e7f80b01',
+    description: 'Atendimento onde o arquivo foi anexado (para baixar pelo GET .../documents/:documentId/download)',
+  })
+  appointmentId?: string
+
+  @ApiPropertyOptional({ example: '6729f1c2a3b4c5d6e7f80c01' })
+  documentId?: string
 }
 
 export class ClinicalConditionResponse {

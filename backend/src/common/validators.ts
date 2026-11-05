@@ -25,9 +25,14 @@ export function isDateOnly(value: unknown): value is string {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
-/** Hoje no formato AAAA-MM-DD (fuso de Brasília, onde a plataforma é usada) */
+/** Data AAAA-MM-DD no fuso de Brasília (onde a plataforma é usada) */
+export function dateOnlyInBrasilia(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(date)
+}
+
+/** Hoje no formato AAAA-MM-DD (fuso de Brasília) */
 export function todayDateOnly(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+  return dateOnlyInBrasilia(new Date())
 }
 
 /**

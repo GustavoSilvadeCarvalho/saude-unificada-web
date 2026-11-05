@@ -547,6 +547,236 @@
           "Atendimentos"
         ]
       }
+    },
+    "/api/appointments/{id}/documents": {
+      "post": {
+        "description": "Um arquivo por requisição, em `multipart/form-data`. Aceita PDF, JPG e PNG de até 10 MB (o tipo é conferido pelo conteúdo, não pelo nome). Só o médico do atendimento pode enviar. `laudo` e `exame` também entram na lista de exames do prontuário.",
+        "operationId": "DocumentsController_upload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id do atendimento",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "type"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, JPG ou PNG, até 10 MB"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "receita",
+                      "laudo",
+                      "exame",
+                      "outro"
+                    ],
+                    "example": "receita"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachedDocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Sem arquivo, formato não aceito, tipo inválido ou limite de documentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Formato não aceito. Envie PDF, JPG ou PNG."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Atendimento de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Só o médico do atendimento pode anexar documentos."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Atendimento não encontrado."
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo maior que 10 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 413,
+                  "message": "Arquivo muito grande. O limite é de 10 MB."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Anexa receita, laudo, exame ou outro documento ao atendimento",
+        "tags": [
+          "Documentos"
+        ]
+      }
+    },
+    "/api/appointments/{id}/documents/{documentId}/download": {
+      "get": {
+        "description": "Devolve uma URL válida por 5 minutos (no S3, URL pré-assinada; no ambiente local, link assinado pela API). Qualquer médico pode baixar, pois o prontuário é unificado; cada download fica na auditoria.",
+        "operationId": "DocumentsController_downloadLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id do atendimento",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80c01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento ou documento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Documento não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link temporário para baixar o documento",
+        "tags": [
+          "Documentos"
+        ]
+      }
     }
   },
   "info": {
@@ -567,6 +797,10 @@
     {
       "name": "Atendimentos",
       "description": "Agenda do médico, histórico do paciente e registro de atendimento"
+    },
+    {
+      "name": "Documentos",
+      "description": "Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)"
     },
     {
       "name": "Saúde",
@@ -863,6 +1097,15 @@
           "fileName": {
             "type": "string",
             "example": "hba1c_jul2026.pdf"
+          },
+          "appointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01",
+            "description": "Atendimento onde o arquivo foi anexado (para baixar pelo GET .../documents/:documentId/download)"
+          },
+          "documentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80c01"
           }
         },
         "required": [
@@ -1389,6 +1632,25 @@
           "date",
           "status",
           "summary"
+        ]
+      },
+      "DownloadLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300",
+            "description": "Abrir direto no navegador ou no app (não precisa do token)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-01T14:46:00.000Z",
+            "description": "O link vale 5 minutos"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
         ]
       }
     }

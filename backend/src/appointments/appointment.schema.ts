@@ -11,6 +11,9 @@ import {
 /** Receita, laudo etc. anexado ao atendimento (o arquivo em si fica no S3; ver bloco 8) */
 @Schema(jsonSchemaOptions)
 export class AttachedDocument {
+  /** Gerado pelo MongoDB (ou pela API, para montar a chave do arquivo antes de salvar) */
+  _id?: Types.ObjectId
+
   @Prop({ required: true, trim: true })
   fileName: string
 

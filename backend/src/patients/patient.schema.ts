@@ -81,6 +81,13 @@ export class Exam {
 
   @Prop()
   fileName?: string
+
+  /** Atendimento e documento de onde o exame veio (quando foi anexado num atendimento) */
+  @Prop()
+  appointmentId?: string
+
+  @Prop()
+  documentId?: string
 }
 export const ExamSchema = SchemaFactory.createForClass(Exam)
 
