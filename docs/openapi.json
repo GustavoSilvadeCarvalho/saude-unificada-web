@@ -2365,11 +2365,13 @@
         "properties": {
           "url": {
             "type": "string",
-            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300"
+            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300",
+            "description": "Abrir direto no navegador ou no app (não precisa do token)"
           },
           "expiresAt": {
             "type": "string",
-            "example": "2026-10-01T14:46:00.000Z"
+            "example": "2026-10-01T14:46:00.000Z",
+            "description": "O link vale 5 minutos"
           }
         },
         "required": [

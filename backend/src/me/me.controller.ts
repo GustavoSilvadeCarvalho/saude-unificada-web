@@ -7,12 +7,11 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiProperty,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
 import type { Request } from 'express'
-import { AppointmentResponse } from '../appointments/appointment.responses.js'
+import { AppointmentResponse, DownloadLinkResponse } from '../appointments/appointment.responses.js'
 import { DocumentsService } from '../appointments/documents.service.js'
 import { CurrentUser } from '../common/current-user.decorator.js'
 import { ErrorResponse } from '../common/error-response.js'
@@ -21,14 +20,6 @@ import { ExamResponse, PatientResponse } from '../patients/patient.responses.js'
 import { MyAppointmentsQuery } from './me.query.js'
 import { AccessLogEntryResponse } from './me.responses.js'
 import { MeService } from './me.service.js'
-
-class DownloadLinkResponse {
-  @ApiProperty({ example: 'https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300' })
-  url: string
-
-  @ApiProperty({ example: '2026-10-01T14:46:00.000Z' })
-  expiresAt: string
-}
 
 @ApiTags('Paciente (app)')
 @ApiBearerAuth()

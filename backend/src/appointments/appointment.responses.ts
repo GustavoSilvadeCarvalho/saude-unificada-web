@@ -48,3 +48,15 @@ export class AppointmentResponse {
   @ApiProperty({ type: [AttachedDocumentResponse] })
   documents: AttachedDocumentResponse[]
 }
+
+/** Link temporário de download (médico e paciente usam o mesmo formato) */
+export class DownloadLinkResponse {
+  @ApiProperty({
+    example: 'https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300',
+    description: 'Abrir direto no navegador ou no app (não precisa do token)',
+  })
+  url: string
+
+  @ApiProperty({ example: '2026-10-01T14:46:00.000Z', description: 'O link vale 5 minutos' })
+  expiresAt: string
+}

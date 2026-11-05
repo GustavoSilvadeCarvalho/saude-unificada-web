@@ -13,7 +13,6 @@ import {
   ApiOperation,
   ApiParam,
   ApiPayloadTooLargeResponse,
-  ApiProperty,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
@@ -23,20 +22,9 @@ import { ErrorResponse } from '../common/error-response.js'
 import { type AuthUser, Roles } from '../common/roles.js'
 import { MAX_UPLOAD_BYTES } from '../common/uploads.js'
 import { DOCUMENT_TYPES } from './appointment.constants.js'
-import { AttachedDocumentResponse } from './appointment.responses.js'
+import { AttachedDocumentResponse, DownloadLinkResponse } from './appointment.responses.js'
 import { DocumentsService } from './documents.service.js'
 import { UploadDocumentDto } from './upload-document.dto.js'
-
-class DownloadLinkResponse {
-  @ApiProperty({
-    example: 'https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300',
-    description: 'Abrir direto no navegador ou no app (não precisa do token)',
-  })
-  url: string
-
-  @ApiProperty({ example: '2026-10-01T14:46:00.000Z', description: 'O link vale 5 minutos' })
-  expiresAt: string
-}
 
 @ApiTags('Documentos')
 @ApiBearerAuth()
