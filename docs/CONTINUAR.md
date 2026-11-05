@@ -50,7 +50,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 - Mensagens de commit em português: `feat(backend): ...`, `test(backend): ...`, `chore(infra): ...`, `docs: ...`.
 - Branch de trabalho: `feat/backend-api`.
 - Pasta local do Matheus: `C:\Users\nepri\Documents\Projeto PI\saude-unificada-web` (o Claude escreve os arquivos ali pela pasta conectada no app desktop).
-- O ambiente do Claude **não consegue baixar o MongoDB** (download bloqueado), então quem roda `npm run dev:memory` e `npm run test:e2e` é o Matheus, no Windows. O Claude roda o `typecheck`.
+- O ambiente do Claude **não consegue baixar o MongoDB** (download bloqueado). Ele roda os testes contra o **FerretDB** (compatível com MongoDB, baixado do GitHub) usando `TEST_MONGODB_URI`, mas o FerretDB não tem transação: o que depender dela (bloco 7) só é validado de verdade quando o Matheus roda `npm run test:e2e` no Windows.
 - Explicar em português e de forma direta.
 
 ## Decisões de infraestrutura e custo (definidas em 05/11)
@@ -82,35 +82,43 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-1. `chore: reorganiza repositório em monorepo (frontend, backend, mobile, docs)`
-2. `chore(backend): setup do projeto NestJS com MongoDB`
-3. `feat(backend): bootstrap da API, validação, CORS, Swagger e filtro de erros`
-4. `feat(backend): login com JWT e controle de acesso por perfil`
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes) e **bloco 6** (pacientes e auditoria) prontos. Próximo: **bloco 7**.
 
 ```
 backend/
-├─ package.json            "type": "module"; scripts dev, build, start, typecheck, test:e2e, seed, dev:memory (seed e dev:memory ainda sem arquivo)
+├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e
 ├─ tsconfig.json           nodenext, decorators + emitDecoratorMetadata, strict
 ├─ tsconfig.build.json     rootDir ./src (o TS 6 exige rootDir explícito)
-├─ nest-cli.json
 ├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts, hookTimeout 120s
-├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR
-└─ src/
-   ├─ main.ts              bootstrap + Swagger em /api/docs
-   ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros (usar também nos testes)
-   ├─ app.module.ts        ConfigModule global, MongooseModule.forRootAsync(MONGODB_URI), UsersModule, AuthModule
-   ├─ common/
-   │  ├─ cpf.ts            onlyDigits, isValidCpf, completeCpf
-   │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
-   │  ├─ roles.ts          USER_ROLES ['medico','gestor'], @Roles(...), @Public(), interface AuthUser {id,name,role}
-   │  ├─ current-user.decorator.ts  @CurrentUser()
-   │  ├─ transforms.ts     @EmptyToUndefined(), @Trim(), @Digits() (class-transformer)
-   │  └─ http-exception.filter.ts   toda resposta de erro = { statusCode, message } em português; E11000 → 409
-   ├─ users/               schema User (passwordHash select:false), UsersService.findByEmailWithPassword / findById
-   └─ auth/                POST /auth/login (público), GET /auth/me; AuthGuard global (APP_GUARD) valida o JWT e o @Roles
+├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR, SWAGGER_ENABLED
+├─ src/
+│  ├─ main.ts              bootstrap (porta em PORT)
+│  ├─ dev-memory.ts        MongoMemoryReplSet + seed + main (npm run dev:memory)
+│  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
+│  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
+│  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
+│  ├─ app.module.ts        Config, Mongoose, Users, Auth, Health, Patients
+│  ├─ common/
+│  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
+│  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
+│  │  ├─ regions.ts        REGIONS (lista fixa até o bloco 9)
+│  │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
+│  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
+│  │  ├─ error-response.ts ErrorResponse (Swagger)
+│  │  ├─ env.ts            loadEnvFile() para scripts fora do Nest
+│  │  ├─ current-user.decorator.ts, transforms.ts (@EmptyToUndefined, @Trim, @Digits)
+│  │  └─ http-exception.filter.ts   erro = { statusCode, message } em português; E11000 → 409
+│  ├─ users/               schema User, UsersService
+│  ├─ auth/                POST /auth/login, GET /auth/me; AuthGuard global (JWT + @Roles)
+│  ├─ health/              GET /health (API + MongoDB, 503 se o banco cair), GET /health/live (load balancer)
+│  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
+│  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf e POST /patients (só medico, auditados)
+│  └─ database/            seed-data.ts (usuários e pacientes dos mocks) e seed.ts (runSeed)
+└─ test/                   helpers.ts (createTestApp, login) + auth, health, patients, swagger
 ```
 
-Testado manualmente: a API sobe, o login responde 401/400 com mensagem em português, `/auth/me` sem token dá 401 e o Swagger abre. Ainda **não há usuários no banco** (eles chegam com o seed).
+- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks (`SEED_CPFS`).
+- Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código
 
@@ -133,7 +141,7 @@ Testado manualmente: a API sobe, o login responde 401/400 com mensagem em portug
 
 Cada bloco de funcionalidade **inclui os testes e2e dele**, **a parte do seed dele** e **a documentação Swagger das rotas dele**.
 
-### Bloco 5 — Base de testes, seed, saúde e Swagger (em 5 commits)
+### ✅ Bloco 5 — Base de testes, seed, saúde e Swagger (em 5 commits)
 1. `docs: decisões de infraestrutura, custos e Swagger`
 2. `feat(backend): seed de usuários e modo dev:memory`
 3. `feat(backend): health check da API e do MongoDB`
@@ -157,7 +165,16 @@ Cada bloco de funcionalidade **inclui os testes e2e dele**, **a parte do seed de
 - `test/auth.e2e-spec.ts`: login ok/401/400, `/auth/me` com e sem token, senha nunca aparece na resposta.
 - Swagger: `src/swagger.ts` (`setupSwagger`, `buildOpenApiDocument`), classes de resposta em `src/auth/auth.responses.ts`, script `src/openapi.ts` (`npm run openapi` → `docs/openapi.json`) e `test/swagger.e2e-spec.ts`.
 
-### Bloco 6 — Pacientes → `feat(backend): cadastro e prontuário unificado de pacientes`
+### ✅ Bloco 6 — Pacientes e auditoria (em 7 commits)
+1. `feat(backend): schema do paciente com o prontuário embutido`
+2. `feat(backend): validação de CPF e datas e DTO de cadastro de paciente`
+3. `feat(backend): trilha de auditoria de acesso ao prontuário (LGPD)`
+4. `feat(backend): rotas de pacientes com documentação Swagger`
+5. `feat(backend): pacientes no seed`
+6. `test(backend): testes e2e de pacientes e auditoria`
+7. `docs: atualiza o CONTINUAR com os blocos 5 e 6`
+
+Plano original:
 - `src/patients/patient.schema.ts`:
   - cpf (unique, index), fullName, birthDate (string AAAA-MM-DD), sex (`F|M|Outro`), bloodType (enum do contrato), phone?, email?, region;
   - listas embutidas `allergies`, `activeMedications`, `procedures`, `exams`, `clinicalConditions`, como subschemas com `jsonSchemaOptions` para o `_id` virar `id`.
@@ -222,6 +239,7 @@ Cada bloco de funcionalidade **inclui os testes e2e dele**, **a parte do seed de
   - `GET /me/record`: a "carteira digital de saúde";
   - `GET /me/appointments?status=realizado|agendado`: histórico e próximos atendimentos;
   - `GET /me/exams`: exames e resultados.
+  - `GET /me/access-log`: quem acessou o prontuário (LGPD: o paciente acompanha os acessos; usar `AuditService.findByPatient`).
 - Seed: um paciente de teste (ex.: Maria). Testes: paciente só vê os próprios dados e recebe 403 nas rotas de médico.
 
 ### Bloco 11 — Docker e CI → `chore(infra): Docker, docker-compose e pipeline de testes no GitHub Actions`
