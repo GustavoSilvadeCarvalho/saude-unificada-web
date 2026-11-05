@@ -1,5 +1,5 @@
-// Regiões de saúde atendidas (mesma lista de frontend/src/mocks/regional.ts).
-// No bloco 9 elas passam a vir da coleção "regions" (GET /regions).
+// Lista inicial das regiões de saúde (mesma de frontend/src/mocks/regional.ts), usada pelo seed.
+// A fonte da verdade é a coleção "regions" (GET /regions): o cadastro de paciente valida por ela.
 
 export const REGIONS = [
   'Grande São Paulo',
