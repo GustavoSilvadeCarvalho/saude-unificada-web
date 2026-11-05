@@ -1,6 +1,7 @@
 import { type INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { HttpExceptionFilter } from './common/http-exception.filter.js'
+import { validationExceptionFactory } from './common/validation.js'
 import { setupSwagger } from './swagger.js'
 
 /** Todas as rotas ficam em /api/... */
@@ -22,6 +23,7 @@ export function configureApp(app: INestApplication) {
       whitelist: true, // descarta campos que não estão no DTO
       transform: true,
       stopAtFirstError: true,
+      exceptionFactory: validationExceptionFactory, // mensagens legíveis, inclusive dentro de listas
     }),
   )
   app.useGlobalFilters(new HttpExceptionFilter())
