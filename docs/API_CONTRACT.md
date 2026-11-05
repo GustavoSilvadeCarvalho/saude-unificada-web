@@ -267,9 +267,11 @@ Resposta `200`:
 
 ## 4. Dados regionais (gestor)
 
-Rotas acessíveis apenas ao perfil `gestor`. Os dados são **agregados e anônimos** (sem CPF ou nome).
+Os dados são **agregados e anônimos** (sem CPF, nome ou id).
 
 ### `GET /regions`
+
+Perfis `gestor` **e** `medico` (o formulário de cadastro de paciente usa a lista). Ordem de exibição definida na coleção `regions`; o `region` do `POST /patients` precisa ser uma delas (`400` "Região inválida.").
 
 ```json
 ["Grande São Paulo", "Campinas", "Baixada Santista", "Vale do Paraíba", "Sorocaba", "Ribeirão Preto"]
@@ -277,7 +279,7 @@ Rotas acessíveis apenas ao perfil `gestor`. Os dados são **agregados e anônim
 
 ### `GET /regional-data?region=&from=&to=`
 
-Todos os parâmetros são opcionais:
+Só o perfil `gestor` (`403` para médico). Todos os parâmetros são opcionais:
 
 | Parâmetro | Formato | Descrição |
 |---|---|---|
@@ -301,6 +303,9 @@ Resposta `200`: uma linha por região por mês.
   }
 ]
 ```
+
+- Ordem: por região e depois por mês. Cada linha tem só `region`, `month`, `appointments`, `uniquePatients` e `conditions` (da maior contagem para a menor).
+- Erros `400`: mês fora do formato (`"Mês inicial inválido. Use o formato AAAA-MM."`), `from` depois de `to` (`"O mês inicial não pode ser depois do mês final."`) ou região inexistente (`"Região inválida."`).
 
 Os indicadores e gráficos (totais, média mensal, ranking de condições, evolução mensal) são calculados no front a partir dessa lista.
 

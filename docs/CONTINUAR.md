@@ -82,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos) e **bloco 8** (documentos com S3) prontos. Próximo: **bloco 9** (painel do gestor).
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3) e **bloco 9** (painel do gestor) prontos. Próximo: **bloco 10** (perfil paciente para o app).
 
 ```
 backend/
@@ -97,11 +97,11 @@ backend/
 │  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
 │  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
 │  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
-│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments
+│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments, Regions
 │  ├─ common/
 │  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
 │  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
-│  │  ├─ regions.ts        REGIONS (lista fixa até o bloco 9)
+│  │  ├─ regions.ts        REGIONS (lista inicial usada pelo seed; a fonte da verdade é a coleção regions)
 │  │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
 │  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
 │  │  ├─ error-response.ts ErrorResponse (Swagger)
@@ -117,9 +117,11 @@ backend/
 │  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf (com appointmentSummaries) e POST /patients (só medico, auditados)
 │  ├─ appointments/        schema (com documents[]), GET /appointments?doctorId|patientCpf, POST /appointments (transação: atendimento + prontuário + auditoria),
 │  │                       POST /appointments/:id/documents (upload) e GET .../documents/:documentId/download (link de 5 min)
+│  ├─ regions/             coleções regions e regional_stats; GET /regions (medico e gestor), GET /regional-data (gestor); RegionsService.exists valida o cadastro de paciente
 │  ├─ storage/             StorageService (local | s3, por STORAGE_DRIVER), createStorage(env), GET /files/:token (links do driver local)
-│  └─ database/            seed-data.ts (usuários, pacientes, atendimentos e documentos dos mocks), seed.ts (runSeed(connection, { storage })), demo-pdf.ts, transaction.runner.ts
-└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, swagger;
+│  └─ database/            seed-data.ts (usuários, pacientes, atendimentos e documentos dos mocks), seed.ts (runSeed(connection, { storage })),
+│                          regional-data.ts (mesmo gerador do mock do site), demo-pdf.ts, transaction.runner.ts
+└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, regional, swagger;
                            unitários: cpf.spec.ts, uploads.spec.ts, storage.spec.ts
 ```
 
@@ -246,7 +248,13 @@ Plano original:
 - Testes com o driver local: upload ok, tipo de arquivo proibido (400), arquivo grande demais (413), outro médico (403).
 - Seed: anexar aos atendimentos os documentos dos mocks (`frontend/src/mocks/appointments.ts`), gravando PDFs de exemplo no armazenamento para o download funcionar na demo.
 
-### Bloco 9 — Painel do gestor → `feat(backend): dados regionais para o painel do gestor`
+### ✅ Bloco 9 — Painel do gestor (em 6 commits)
+- Feito como planejado, com uma mudança: `GET /regions` é de **médico e gestor**, porque o formulário de cadastro de paciente do site usa a lista. `GET /regional-data` continua só do gestor.
+- Dados do seed com o mesmo gerador e a mesma semente do mock do site (12 meses completos × 6 regiões), representando totais que chegariam agregados dos sistemas municipais.
+- Região do paciente validada pela coleção `regions` (região nova cadastrada no banco já vale no formulário, sem mudar código).
+- Resposta sem `_id` nem nenhum dado de paciente (teste de anonimato).
+
+Plano original:
 - Coleções:
   - `regions`;
   - `regional_stats` {region, month 'AAAA-MM', appointments, uniquePatients, conditions[{name,count}]}, com subschema `_id: false` e índice em (region, month).
