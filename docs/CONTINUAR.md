@@ -295,8 +295,8 @@ Plano original:
 - Testado de verdade no Docker Desktop do Matheus (05/11): imagem com 101 MB, API e MongoDB saudáveis, seed ok, teste de fumaça 9/9, contêiner rodando como `node`.
 - Esse teste mostrou o aviso "Duplicate DTO: DownloadLinkResponse" do Swagger (a mesma classe criada em dois controllers; vira erro na próxima versão do `@nestjs/swagger`). Corrigido com uma classe só em `appointment.responses.ts`, e o teste do Swagger agora falha se a geração da documentação emitir qualquer aviso.
 - `npm audit` acusa 2 vulnerabilidades moderadas só nas dependências de desenvolvimento (as de produção têm 0). Revisar no bloco 13.
-- **CI no GitHub, 1ª execução:** jobs API e Site passaram; o job Docker falhou porque o `mongo:8` se recusa a iniciar em kernel Linux 6.19 a 7.0.13 (SERVER-121912), e o `ubuntu-latest` está migrando para o Ubuntu 26, que usa esse kernel. Correção: runners fixados em `ubuntu-24.04`.
-  - **Atenção no bloco 12:** o Atlas não é afetado (kernel 6.1). Se algum MongoDB rodar numa VM ou EC2 nossa (plano C com OpenStack, por exemplo), usar uma imagem com kernel abaixo de 6.19 (Amazon Linux 2023 e Ubuntu 24.04 servem) ou 7.0.14 em diante.
+- **CI no GitHub:** jobs API e Site passaram de primeira; o job Docker falhou porque o `mongo:8` se recusa a iniciar em kernel Linux 6.19 a 7.0.13 (SERVER-121912), que já é o kernel dos runners do GitHub (até no `ubuntu-24.04`: fixar o Ubuntu não resolveu). Correção: o `docker-compose.yml` usa **`mongo:7.0`** (sem o problema; a API funciona igual), com `MONGO_IMAGE` para trocar. O CI mostra o kernel do runner (`uname -r`).
+  - **Atenção no bloco 12:** o Atlas não é afetado (kernel 6.1). Se algum MongoDB 8 rodar numa VM ou EC2 nossa (plano C com OpenStack, por exemplo), conferir o kernel com `uname -r`: precisa ser abaixo de 6.19 ou 7.0.14 em diante. Na dúvida, usar o MongoDB 7.0.
 
 Plano original:
 - `backend/Dockerfile` multi-stage (build → runtime Node slim, usuário não-root) e `.dockerignore`.
