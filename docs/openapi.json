@@ -1,0 +1,2420 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "description": "Devolve o token JWT e os dados do usuário. A senha nunca aparece na resposta.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "E-mail em formato inválido ou senha vazia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Informe um e-mail válido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "E-mail ou senha inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "E-mail ou senha inválidos."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login de profissional de saúde ou gestor",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/auth/patient-login": {
+      "post": {
+        "description": "O token traz o CPF do paciente e só abre as rotas /me. A senha nunca aparece na resposta.",
+        "operationId": "AuthController_patientLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido ou senha vazia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "CPF sem conta ou senha errada (mesma mensagem nos dois casos)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "CPF ou senha inválidos."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login do paciente no app (CPF e senha, como no gov.br)",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/auth/patient-register": {
+      "post": {
+        "description": "O paciente confirma quem é com CPF + data de nascimento, que precisam bater com o prontuário criado pelo médico (só quem já foi atendido tem cadastro). A senha tem de 8 a 64 caracteres, com letras e números, e não pode conter o CPF nem a data de nascimento. Já devolve o token (entra direto).",
+        "operationId": "AuthController_registerPatient",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientRegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF e data de nascimento não conferem, ou senha fraca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A senha precisa ter letras e números."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O CPF já tem conta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Este CPF já tem conta. Use a opção Entrar."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Primeiro acesso do paciente: cria a senha do app",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dados do usuário logado",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Responde 200 com tudo funcionando e 503 se o MongoDB estiver fora. Usado pelos alarmes do CloudWatch.",
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MongoDB fora do ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Status da API e do MongoDB",
+        "tags": [
+          "Saúde"
+        ]
+      }
+    },
+    "/api/health/live": {
+      "get": {
+        "description": "Usado pelo health check do load balancer: uma queda rápida do MongoDB não deve fazer a AWS derrubar e recriar as instâncias da API.",
+        "operationId": "HealthController_live",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A API está de pé (não consulta o banco)",
+        "tags": [
+          "Saúde"
+        ]
+      }
+    },
+    "/api/patients/{cpf}": {
+      "get": {
+        "description": "Busca pelo CPF (com ou sem máscara). O acesso é registrado na auditoria (LGPD).",
+        "operationId": "PatientsController_getRecord",
+        "parameters": [
+          {
+            "name": "cpf",
+            "required": true,
+            "in": "path",
+            "description": "CPF do paciente, só dígitos ou com máscara (229.169.264-02)",
+            "schema": {
+              "example": "22916926402",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão (só médicos acessam prontuários)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhum paciente com este CPF (o site oferece o cadastro)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Paciente não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Prontuário unificado do paciente",
+        "tags": [
+          "Pacientes"
+        ]
+      }
+    },
+    "/api/patients": {
+      "post": {
+        "description": "Cria o prontuário com as listas vazias. Alergias, medicamentos e condições entram depois, pelos atendimentos.",
+        "operationId": "PatientsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePatientDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "CPF inválido ou campo obrigatório faltando/inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "CPF inválido."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão (só médicos acessam prontuários)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CPF já cadastrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Já existe um paciente cadastrado com este CPF."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cadastra um paciente",
+        "tags": [
+          "Pacientes"
+        ]
+      }
+    },
+    "/api/regions": {
+      "get": {
+        "description": "Usada no filtro do painel do gestor e no cadastro de paciente (por isso médico também acessa).",
+        "operationId": "RegionsController_regions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "Grande São Paulo",
+                    "Campinas",
+                    "Baixada Santista",
+                    "Vale do Paraíba",
+                    "Sorocaba",
+                    "Ribeirão Preto"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Regiões de saúde",
+        "tags": [
+          "Dados regionais"
+        ]
+      }
+    },
+    "/api/regional-data": {
+      "get": {
+        "description": "Uma linha por região por mês, ordenada por região e mês. Os dados são agregados e anônimos (sem CPF nem nome). Totais, médias, ranking de condições e evolução mensal são calculados no front a partir desta lista.",
+        "operationId": "RegionsController_regionalData",
+        "parameters": [
+          {
+            "name": "region",
+            "required": false,
+            "in": "query",
+            "description": "Uma região de GET /regions (vazio = todas)",
+            "schema": {
+              "example": "Campinas",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Mês inicial, inclusive (AAAA-MM)",
+            "schema": {
+              "example": "2026-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Mês final, inclusive (AAAA-MM)",
+            "schema": {
+              "example": "2026-10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegionalRecordResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mês em formato inválido, mês inicial depois do final, ou região inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "O mês inicial não pode ser depois do mês final."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o gestor público acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dados regionais agregados para o painel do gestor",
+        "tags": [
+          "Dados regionais"
+        ]
+      }
+    },
+    "/api/appointments": {
+      "get": {
+        "description": "Informe **um** filtro. `doctorId`: só a própria agenda, em ordem crescente de data. `patientCpf`: atendimentos do paciente com todos os médicos, do mais recente ao mais antigo (acesso auditado).",
+        "operationId": "AppointmentsController_list",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": false,
+            "in": "query",
+            "description": "Agenda do médico (só o próprio médico). Ordem: data crescente",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          },
+          {
+            "name": "patientCpf",
+            "required": false,
+            "in": "query",
+            "description": "Histórico do paciente, de todos os médicos. Ordem: data decrescente",
+            "schema": {
+              "example": "22916926402",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppointmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nenhum filtro, os dois filtros juntos, ou filtro inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Informe doctorId ou patientCpf."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Agenda de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Você só pode ver a sua própria agenda."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agenda do médico ou histórico do paciente",
+        "tags": [
+          "Atendimentos"
+        ]
+      },
+      "post": {
+        "description": "Tudo numa transação: o atendimento, as alergias, medicamentos e condições novas do paciente e o registro de auditoria. Com `scheduledAppointmentId`, conclui (ou remarca) o agendamento em vez de criar outro. Realizado: data não pode ser no futuro e o resumo tem no mínimo 10 caracteres. Agendado: data no futuro e listas vazias.",
+        "operationId": "AppointmentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos ou regra do atendimento não atendida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Um atendimento realizado não pode ter data no futuro."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "doctorId diferente do médico logado, agendamento de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Você só pode registrar atendimentos em seu próprio nome."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Paciente ou agendamento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Paciente não encontrado."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O agendamento informado já foi registrado como realizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Este atendimento já foi registrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registra um atendimento e atualiza o prontuário",
+        "tags": [
+          "Atendimentos"
+        ]
+      }
+    },
+    "/api/appointments/{id}/documents": {
+      "post": {
+        "description": "Um arquivo por requisição, em `multipart/form-data`. Aceita PDF, JPG e PNG de até 10 MB (o tipo é conferido pelo conteúdo, não pelo nome). Só o médico do atendimento pode enviar. `laudo` e `exame` também entram na lista de exames do prontuário.",
+        "operationId": "DocumentsController_upload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id do atendimento",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "type"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF, JPG ou PNG, até 10 MB"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "receita",
+                      "laudo",
+                      "exame",
+                      "outro"
+                    ],
+                    "example": "receita"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachedDocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Sem arquivo, formato não aceito, tipo inválido ou limite de documentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Formato não aceito. Envie PDF, JPG ou PNG."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Atendimento de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Só o médico do atendimento pode anexar documentos."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Atendimento não encontrado."
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Arquivo maior que 10 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 413,
+                  "message": "Arquivo muito grande. O limite é de 10 MB."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Anexa receita, laudo, exame ou outro documento ao atendimento",
+        "tags": [
+          "Documentos"
+        ]
+      }
+    },
+    "/api/appointments/{id}/documents/{documentId}/download": {
+      "get": {
+        "description": "Devolve uma URL válida por 5 minutos (no S3, URL pré-assinada; no ambiente local, link assinado pela API). Qualquer médico pode baixar, pois o prontuário é unificado; cada download fica na auditoria.",
+        "operationId": "DocumentsController_downloadLink",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Id do atendimento",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80c01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento ou documento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Documento não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link temporário para baixar o documento",
+        "tags": [
+          "Documentos"
+        ]
+      }
+    },
+    "/api/me/record": {
+      "get": {
+        "description": "O prontuário do próprio paciente (mesmo formato de GET /patients/:cpf). Somente leitura.",
+        "operationId": "MeController_record",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatientResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Carteira digital de saúde",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/appointments": {
+      "get": {
+        "description": "`status=realizado`: o que já fez. `status=agendado`: o que vai fazer. Com os documentos anexados.",
+        "operationId": "MeController_appointments",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "realizado = histórico (mais recente primeiro); agendado = próximos (mais próximo primeiro); vazio = todos",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "realizado",
+                "agendado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppointmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Histórico e próximos atendimentos",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/exams": {
+      "get": {
+        "operationId": "MeController_exams",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Exames e laudos, do mais recente ao mais antigo",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/access-log": {
+      "get": {
+        "description": "LGPD: o paciente vê quais profissionais abriram o prontuário, registraram atendimento ou baixaram documentos.",
+        "operationId": "MeController_accessLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AccessLogEntryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Quem acessou o meu prontuário",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/appointments/{id}/documents/{documentId}/download": {
+      "get": {
+        "description": "Mesmo funcionamento do link do médico (5 minutos, sem token). Só documentos do próprio paciente.",
+        "operationId": "MeController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80b01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80c01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento ou documento não encontrado (ou de outro paciente)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Documento não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link para baixar um documento meu (receita, laudo, exame)",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Saúde Unificada — API",
+    "description": "API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pelo site (médicos e gestores) e pelo app (pacientes).\n\n**Como testar por aqui**\n1. Abra *Autenticação → POST /api/auth/login* e clique em **Execute** (o exemplo já vem com o médico de teste).\n2. Copie o `token` da resposta, clique em **Authorize** (cadeado no topo) e cole o token.\n3. As outras rotas passam a mandar o token automaticamente (ele fica salvo mesmo se a página recarregar).\n\n**Usuários de teste** (ambiente de desenvolvimento e demonstração), senha `123456`:\n- `medico@teste.com`: médico (Clínica Médica)\n- `cardio@teste.com`: médica (Cardiologia)\n- `gestor@teste.com`: gestora pública\n\n**Pacientes no app** (`POST /auth/patient-login`, CPF + senha `paciente123`): Maria `22916926402` e João `27952204408`.\nPrimeiro acesso (`POST /auth/patient-register`): Ana `50717927296`, nascida em `1996-11-05`.\n\nErros sempre voltam como `{ \"statusCode\": 401, \"message\": \"...\" }`, com a mensagem em português.\nContrato completo: `docs/API_CONTRACT.md`.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "Autenticação",
+      "description": "Login (site: e-mail; app: CPF, como no gov.br), primeiro acesso do paciente e usuário logado"
+    },
+    {
+      "name": "Pacientes",
+      "description": "Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)"
+    },
+    {
+      "name": "Atendimentos",
+      "description": "Agenda do médico, histórico do paciente e registro de atendimento"
+    },
+    {
+      "name": "Documentos",
+      "description": "Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)"
+    },
+    {
+      "name": "Dados regionais",
+      "description": "Painel do gestor público: totais agregados e anônimos por região e mês"
+    },
+    {
+      "name": "Paciente (app)",
+      "description": "Carteira digital de saúde, histórico, próximos atendimentos, exames e quem acessou o prontuário"
+    },
+    {
+      "name": "Saúde",
+      "description": "Status da API e do banco (monitoramento e load balancer)"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Token devolvido pelo login"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "medico@teste.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "email": {
+            "type": "string",
+            "example": "medico@teste.com",
+            "description": "Médico e gestor"
+          },
+          "cpf": {
+            "type": "string",
+            "example": "22916926402",
+            "description": "Só no perfil paciente"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "medico",
+              "gestor",
+              "paciente"
+            ],
+            "example": "medico"
+          },
+          "crm": {
+            "type": "string",
+            "example": "CRM-SP 123456",
+            "description": "Só para médicos"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica",
+            "description": "Só para médicos"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(11) 3456-7890"
+          },
+          "institution": {
+            "type": "string",
+            "example": "UBS Vila Mariana",
+            "description": "Unidade de saúde (médico) ou órgão (gestor)"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "description": "JWT para o header Authorization"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "token",
+          "user"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 401
+          },
+          "message": {
+            "type": "string",
+            "example": "E-mail ou senha inválidos.",
+            "description": "Mensagem em português, exibida ao usuário"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message"
+        ]
+      },
+      "PatientLoginDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "22916926402",
+            "description": "Só dígitos ou com máscara (229.169.264-02)"
+          },
+          "password": {
+            "type": "string",
+            "example": "paciente123"
+          }
+        },
+        "required": [
+          "cpf",
+          "password"
+        ]
+      },
+      "PatientRegisterDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "50717927296",
+            "description": "Só dígitos ou com máscara"
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1996-11-05",
+            "description": "AAAA-MM-DD, igual à do cadastro na unidade de saúde"
+          },
+          "password": {
+            "type": "string",
+            "example": "meuApp2026",
+            "description": "De 8 a 64 caracteres, com letras e números; não pode conter o CPF nem a data de nascimento"
+          }
+        },
+        "required": [
+          "cpf",
+          "birthDate",
+          "password"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "erro"
+            ],
+            "example": "ok"
+          },
+          "mongodb": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "example": "up",
+            "description": "Conexão com o MongoDB"
+          },
+          "uptimeSeconds": {
+            "type": "number",
+            "example": 3600,
+            "description": "Segundos desde que a API subiu"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-11-05T03:00:00.000Z"
+          }
+        },
+        "required": [
+          "status",
+          "mongodb",
+          "uptimeSeconds",
+          "timestamp"
+        ]
+      },
+      "LiveResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AllergyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a01"
+          },
+          "substance": {
+            "type": "string",
+            "example": "Penicilina"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "leve",
+              "moderada",
+              "grave"
+            ],
+            "example": "grave"
+          },
+          "reaction": {
+            "type": "string",
+            "example": "Anafilaxia"
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2015-06-02",
+            "description": "AAAA-MM-DD"
+          }
+        },
+        "required": [
+          "id",
+          "substance",
+          "severity",
+          "recordedAt"
+        ]
+      },
+      "MedicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a02"
+          },
+          "name": {
+            "type": "string",
+            "example": "Losartana potássica"
+          },
+          "dosage": {
+            "type": "string",
+            "example": "50 mg"
+          },
+          "frequency": {
+            "type": "string",
+            "example": "1x ao dia"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2018-04-10",
+            "description": "AAAA-MM-DD"
+          },
+          "prescribedBy": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "dosage",
+          "frequency",
+          "startDate"
+        ]
+      },
+      "ProcedureResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a03"
+          },
+          "name": {
+            "type": "string",
+            "example": "Colecistectomia videolaparoscópica"
+          },
+          "date": {
+            "type": "string",
+            "example": "2016-09-12",
+            "description": "AAAA-MM-DD"
+          },
+          "location": {
+            "type": "string",
+            "example": "Hospital das Clínicas - SP"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Sem intercorrências"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date"
+        ]
+      },
+      "ExamResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a04"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hemoglobina glicada (HbA1c)"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-07-18",
+            "description": "AAAA-MM-DD"
+          },
+          "result": {
+            "type": "string",
+            "example": "7,1% — acima da meta"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "hba1c_jul2026.pdf"
+          },
+          "appointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01",
+            "description": "Atendimento onde o arquivo foi anexado (para baixar pelo GET .../documents/:documentId/download)"
+          },
+          "documentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80c01"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date",
+          "result"
+        ]
+      },
+      "ClinicalConditionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80a05"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hipertensão arterial sistêmica"
+          },
+          "cid": {
+            "type": "string",
+            "example": "I10",
+            "description": "Código CID-10"
+          },
+          "diagnosedAt": {
+            "type": "string",
+            "example": "2018-04-10",
+            "description": "AAAA-MM-DD"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ativa",
+              "controlada",
+              "resolvida"
+            ],
+            "example": "controlada"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "diagnosedAt",
+          "status"
+        ]
+      },
+      "AppointmentSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-08-02T12:00:00.000Z"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica"
+          },
+          "summary": {
+            "type": "string",
+            "example": "PA 132/84 mmHg. Mantida conduta."
+          }
+        },
+        "required": [
+          "appointmentId",
+          "date",
+          "doctorName",
+          "summary"
+        ]
+      },
+      "PatientResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "22916926402",
+            "description": "Só dígitos"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Maria Aparecida da Silva"
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1958-03-14",
+            "description": "AAAA-MM-DD"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "Outro"
+            ],
+            "example": "F"
+          },
+          "bloodType": {
+            "type": "string",
+            "enum": [
+              "A+",
+              "A-",
+              "B+",
+              "B-",
+              "AB+",
+              "AB-",
+              "O+",
+              "O-",
+              "Não informado"
+            ],
+            "example": "O-"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(11) 98765-4321"
+          },
+          "email": {
+            "type": "string",
+            "example": "maria.silva@email.com"
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "Grande São Paulo",
+              "Campinas",
+              "Baixada Santista",
+              "Vale do Paraíba",
+              "Sorocaba",
+              "Ribeirão Preto"
+            ],
+            "example": "Grande São Paulo"
+          },
+          "allergies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllergyResponse"
+            }
+          },
+          "activeMedications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MedicationResponse"
+            }
+          },
+          "procedures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcedureResponse"
+            }
+          },
+          "exams": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExamResponse"
+            }
+          },
+          "clinicalConditions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClinicalConditionResponse"
+            }
+          },
+          "appointmentSummaries": {
+            "description": "Só atendimentos realizados, do mais recente para o mais antigo",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppointmentSummaryResponse"
+            }
+          }
+        },
+        "required": [
+          "cpf",
+          "fullName",
+          "birthDate",
+          "sex",
+          "bloodType",
+          "region",
+          "allergies",
+          "activeMedications",
+          "procedures",
+          "exams",
+          "clinicalConditions",
+          "appointmentSummaries"
+        ]
+      },
+      "CreatePatientDto": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "example": "81646027876",
+            "description": "Só dígitos ou com a máscara 816.460.278-76. Precisa ter dígitos verificadores válidos; CPFs de exemplo conhecidos são recusados."
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Fulano de Tal",
+            "maxLength": 120
+          },
+          "birthDate": {
+            "type": "string",
+            "example": "1990-05-10",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M",
+              "Outro"
+            ],
+            "example": "M"
+          },
+          "bloodType": {
+            "type": "string",
+            "enum": [
+              "A+",
+              "A-",
+              "B+",
+              "B-",
+              "AB+",
+              "AB-",
+              "O+",
+              "O-",
+              "Não informado"
+            ],
+            "example": "Não informado"
+          },
+          "phone": {
+            "type": "string",
+            "example": "(19) 99999-0000",
+            "description": "Vazio (\"\") é tratado como não informado"
+          },
+          "email": {
+            "type": "string",
+            "example": "fulano@email.com",
+            "description": "Vazio (\"\") é tratado como não informado"
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "Grande São Paulo",
+              "Campinas",
+              "Baixada Santista",
+              "Vale do Paraíba",
+              "Sorocaba",
+              "Ribeirão Preto"
+            ],
+            "example": "Campinas"
+          }
+        },
+        "required": [
+          "cpf",
+          "fullName",
+          "birthDate",
+          "sex",
+          "bloodType",
+          "region"
+        ]
+      },
+      "ConditionCountResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Hipertensão"
+          },
+          "count": {
+            "type": "number",
+            "example": 1020
+          }
+        },
+        "required": [
+          "name",
+          "count"
+        ]
+      },
+      "RegionalRecordResponse": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string",
+            "example": "Campinas"
+          },
+          "month": {
+            "type": "string",
+            "example": "2026-09",
+            "description": "AAAA-MM"
+          },
+          "appointments": {
+            "type": "number",
+            "example": 6120,
+            "description": "Atendimentos no mês"
+          },
+          "uniquePatients": {
+            "type": "number",
+            "example": 4010,
+            "description": "Pacientes únicos atendidos no mês"
+          },
+          "conditions": {
+            "description": "Condições mais atendidas, da maior para a menor",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConditionCountResponse"
+            }
+          }
+        },
+        "required": [
+          "region",
+          "month",
+          "appointments",
+          "uniquePatients",
+          "conditions"
+        ]
+      },
+      "AttachedDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80c01"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "receita_amoxicilina.pdf"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "laudo",
+              "exame",
+              "outro"
+            ],
+            "example": "receita"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "example": "2026-10-01T14:41:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "type",
+          "uploadedAt"
+        ]
+      },
+      "AppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01"
+          },
+          "patientCpf": {
+            "type": "string",
+            "example": "22916926402"
+          },
+          "patientName": {
+            "type": "string",
+            "example": "Maria Aparecida da Silva"
+          },
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "realizado",
+              "agendado"
+            ],
+            "example": "realizado"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Retorno — controle glicêmico"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Paciente estável, glicemia em melhora. Mantida conduta."
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachedDocumentResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "patientCpf",
+          "patientName",
+          "doctorId",
+          "doctorName",
+          "date",
+          "status",
+          "summary",
+          "documents"
+        ]
+      },
+      "NewAllergyDto": {
+        "type": "object",
+        "properties": {
+          "substance": {
+            "type": "string",
+            "example": "Ibuprofeno"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "leve",
+              "moderada",
+              "grave"
+            ],
+            "example": "moderada"
+          },
+          "reaction": {
+            "type": "string",
+            "example": "Urticária"
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          }
+        },
+        "required": [
+          "substance",
+          "severity",
+          "recordedAt"
+        ]
+      },
+      "NewMedicationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Amoxicilina"
+          },
+          "dosage": {
+            "type": "string",
+            "example": "500 mg"
+          },
+          "frequency": {
+            "type": "string",
+            "example": "8 em 8 horas"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD"
+          },
+          "prescribedBy": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima",
+            "description": "Padrão: o médico do atendimento"
+          }
+        },
+        "required": [
+          "name",
+          "dosage",
+          "frequency",
+          "startDate"
+        ]
+      },
+      "NewConditionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Sinusite aguda"
+          },
+          "cid": {
+            "type": "string",
+            "example": "J01",
+            "description": "Código CID-10 (ex.: I10, J45.0)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ativa",
+              "controlada",
+              "resolvida"
+            ],
+            "example": "ativa"
+          },
+          "diagnosedAt": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "diagnosedAt"
+        ]
+      },
+      "CreateAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "scheduledAppointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01",
+            "description": "Se informado, conclui (ou remarca) esse agendamento em vez de criar outro"
+          },
+          "patientCpf": {
+            "type": "string",
+            "example": "22916926402"
+          },
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912",
+            "description": "Tem que ser o médico logado"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z",
+            "description": "ISO 8601. Realizado: não pode ser no futuro. Agendado: tem que ser no futuro."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "realizado",
+              "agendado"
+            ],
+            "example": "realizado"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Retorno — controle glicêmico"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Paciente estável, glicemia em melhora. Mantida conduta.",
+            "description": "Obrigatório (mínimo de 10 caracteres) quando realizado; pode ser vazio no agendamento"
+          },
+          "newAllergies": {
+            "description": "Adicionadas às alergias do paciente",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewAllergyDto"
+            }
+          },
+          "newMedications": {
+            "description": "Adicionados aos medicamentos ativos",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMedicationDto"
+            }
+          },
+          "newConditions": {
+            "description": "Adicionadas às condições clínicas",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewConditionDto"
+            }
+          }
+        },
+        "required": [
+          "patientCpf",
+          "doctorId",
+          "date",
+          "status",
+          "summary"
+        ]
+      },
+      "DownloadLinkResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-01T14:46:00.000Z"
+          }
+        },
+        "required": [
+          "url",
+          "expiresAt"
+        ]
+      },
+      "AccessLogEntryResponse": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z"
+          },
+          "description": {
+            "type": "string",
+            "example": "Abriu o seu prontuário"
+          },
+          "userName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "userRole": {
+            "type": "string",
+            "enum": [
+              "medico",
+              "gestor",
+              "paciente"
+            ],
+            "example": "medico"
+          },
+          "action": {
+            "type": "string",
+            "example": "patient.view",
+            "description": "Código da ação (auditoria)"
+          }
+        },
+        "required": [
+          "at",
+          "description",
+          "userName",
+          "userRole",
+          "action"
+        ]
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { SetMetadata } from '@nestjs/common'
 
-export const USER_ROLES = ['medico', 'gestor'] as const
+/** medico e gestor usam o site (login por e-mail); paciente usa o app (login por CPF, estilo gov.br) */
+export const USER_ROLES = ['medico', 'gestor', 'paciente'] as const
 export type UserRole = (typeof USER_ROLES)[number]
 
 export const ROLES_KEY = 'roles'
@@ -17,4 +18,6 @@ export interface AuthUser {
   id: string
   name: string
   role: UserRole
+  /** Só no perfil paciente: o CPF do próprio prontuário */
+  cpf?: string
 }

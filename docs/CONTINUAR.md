@@ -46,41 +46,89 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
   2. rodar os testes;
   3. parar e passar os comandos `git add <arquivos> && git commit -m "..."`.
 - **Quem commita é o Matheus**, não o Claude. O histórico de commits é a trilha de evolução do projeto.
+- **Vários commits pequenos por bloco** (um por parte: seed, rota, Swagger, testes...), não um commitzão.
 - Mensagens de commit em português: `feat(backend): ...`, `test(backend): ...`, `chore(infra): ...`, `docs: ...`.
 - Branch de trabalho: `feat/backend-api`.
+- Pasta local do Matheus: `C:\Users\nepri\Documents\Projeto PI\saude-unificada-web` (o Claude escreve os arquivos ali pela pasta conectada no app desktop).
+- O ambiente do Claude **não consegue baixar o MongoDB** (download bloqueado). Ele roda os testes contra o **FerretDB** (compatível com MongoDB, baixado do GitHub) usando `TEST_MONGODB_URI`, mas o FerretDB não tem transação: o que depender dela (bloco 7) só é validado de verdade quando o Matheus roda `npm run test:e2e` no Windows.
 - Explicar em português e de forma direta.
+
+## Decisões de infraestrutura e custo (definidas em 05/11)
+
+**Orçamento: no máximo R$ 50 no projeto inteiro (≈ US$ 9). Tudo que puder ser gratuito, é gratuito.**
+
+| O quê | Onde | Custo |
+|---|---|---|
+| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)**, região São Paulo | R$ 0 |
+| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado | centavos |
+| API "no ar" durante a entrega | 1 instância pequena (EC2 com Docker) | ~US$ 5–8 |
+| Teste de escalabilidade | ECS Fargate + ALB com auto scaling 1→3, **ligado só nas rodadas de teste** (~2 h) e destruído com `cdk destroy` | < US$ 1 |
+| Monitoramento | CloudWatch (logs com retenção de 7 dias, 1 dashboard, poucos alarmes) | ~R$ 0 |
+| Site | Vercel | R$ 0 |
+| Plano C | VMs com **OpenStack**, só na reta final e se a AWS não der certo | — |
+
+- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Conferir se ECS/ALB estão liberados no plano Free; se não, usar EC2 + Auto Scaling Group.
+- **Região sa-east-1 (São Paulo)** para API, S3 e Atlas: argumento de LGPD (dados de saúde no Brasil) e menor latência na demo.
+- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública.
+- **Alerta de orçamento (AWS Budgets)** em US$ 3 e US$ 8 no primeiro dia.
+- **Limites do Atlas Free:** 512 MB, 100 operações/s, 500 conexões. O teste de carga mira principalmente o **login** (bcrypt gasta CPU e faz 1 leitura no banco): a CPU da API sobe e dispara o auto scaling sem estourar o limite do Atlas.
+
+## Swagger (documentação viva da API)
+
+- Swagger UI em `/api/docs` e o JSON do OpenAPI em `/api/docs-json`. Liga/desliga com `SWAGGER_ENABLED` (padrão `true`, deixado ligado na demo).
+- **Todo bloco documenta as próprias rotas:** `@ApiTags`, `@ApiOperation`, `@ApiProperty` nos DTOs, classes de resposta e os erros (`@ApiUnauthorizedResponse`, `@ApiForbiddenResponse`, ...), com exemplos iguais ao `API_CONTRACT.md`.
+- `npm run openapi` gera `docs/openapi.json` (sem precisar de banco). Serve como evidência, para importar no Postman/Insomnia e como base dos testes de carga (k6).
+- Na parte de Qualidade, o Swagger entra no plano de testes como ferramenta de **teste exploratório/manual** (com prints em `tests/relatorios/`), e há um teste e2e garantindo que todas as rotas aparecem documentadas.
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-1. `chore: reorganiza repositório em monorepo (frontend, backend, mobile, docs)`
-2. `chore(backend): setup do projeto NestJS com MongoDB`
-3. `feat(backend): bootstrap da API, validação, CORS, Swagger e filtro de erros`
-4. `feat(backend): login com JWT e controle de acesso por perfil`
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor) e **bloco 10** (paciente no app, login por CPF) prontos. Próximo: **bloco 11** (Docker e CI) e o **app mobile**.
 
 ```
 backend/
-├─ package.json            "type": "module"; scripts dev, build, start, typecheck, test:e2e, seed, dev:memory (seed e dev:memory ainda sem arquivo)
+├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e
 ├─ tsconfig.json           nodenext, decorators + emitDecoratorMetadata, strict
 ├─ tsconfig.build.json     rootDir ./src (o TS 6 exige rootDir explícito)
-├─ nest-cli.json
 ├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts, hookTimeout 120s
-├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR
-└─ src/
-   ├─ main.ts              bootstrap + Swagger em /api/docs
-   ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros (usar também nos testes)
-   ├─ app.module.ts        ConfigModule global, MongooseModule.forRootAsync(MONGODB_URI), UsersModule, AuthModule
-   ├─ common/
-   │  ├─ cpf.ts            onlyDigits, isValidCpf, completeCpf
-   │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
-   │  ├─ roles.ts          USER_ROLES ['medico','gestor'], @Roles(...), @Public(), interface AuthUser {id,name,role}
-   │  ├─ current-user.decorator.ts  @CurrentUser()
-   │  ├─ transforms.ts     @EmptyToUndefined(), @Trim(), @Digits() (class-transformer)
-   │  └─ http-exception.filter.ts   toda resposta de erro = { statusCode, message } em português; E11000 → 409
-   ├─ users/               schema User (passwordHash select:false), UsersService.findByEmailWithPassword / findById
-   └─ auth/                POST /auth/login (público), GET /auth/me; AuthGuard global (APP_GUARD) valida o JWT e o @Roles
+├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR, SWAGGER_ENABLED
+├─ src/
+│  ├─ main.ts              bootstrap (porta em PORT)
+│  ├─ dev-memory.ts        MongoMemoryReplSet + seed + main (npm run dev:memory)
+│  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
+│  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
+│  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
+│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments, Regions, Me
+│  ├─ common/
+│  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
+│  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
+│  │  ├─ regions.ts        REGIONS (lista inicial usada pelo seed; a fonte da verdade é a coleção regions)
+│  │  ├─ schema-options.ts jsonSchemaOptions: toJSON troca _id→id e remove __v, passwordHash, storedName (usar em TODO schema e subschema)
+│  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
+│  │  ├─ error-response.ts ErrorResponse (Swagger)
+│  │  ├─ validation.ts     validationExceptionFactory: mensagens legíveis ("Alergia 2: ...") no ValidationPipe
+│  │  ├─ password.ts       passwordProblem: regras da senha do paciente (8+, letras e números, sem CPF/nascimento, não comum)
+│  │  ├─ uploads.ts        detectFileType (PDF/JPG/PNG pelo conteúdo), cleanFileName (acento/latin1), MAX_UPLOAD_BYTES
+│  │  ├─ env.ts            loadEnvFile() para scripts fora do Nest
+│  │  ├─ current-user.decorator.ts, transforms.ts (@EmptyToUndefined, @Trim, @Digits)
+│  │  └─ http-exception.filter.ts   erro = { statusCode, message } em português; E11000 → 409
+│  ├─ users/               schema User (email p/ medico e gestor, cpf p/ paciente; índices únicos sparse), UsersService
+│  ├─ auth/                POST /auth/login (site), POST /auth/patient-login e /auth/patient-register (app, CPF), GET /auth/me; AuthGuard global (JWT + @Roles; paciente leva o CPF no token)
+│  ├─ me/                  rotas do app do paciente: /me/record, /me/appointments, /me/exams, /me/access-log, download de documento próprio
+│  ├─ health/              GET /health (API + MongoDB, 503 se o banco cair), GET /health/live (load balancer)
+│  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
+│  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf (com appointmentSummaries) e POST /patients (só medico, auditados)
+│  ├─ appointments/        schema (com documents[]), GET /appointments?doctorId|patientCpf, POST /appointments (transação: atendimento + prontuário + auditoria),
+│  │                       POST /appointments/:id/documents (upload) e GET .../documents/:documentId/download (link de 5 min)
+│  ├─ regions/             coleções regions e regional_stats; GET /regions (medico e gestor), GET /regional-data (gestor); RegionsService.exists valida o cadastro de paciente
+│  ├─ storage/             StorageService (local | s3, por STORAGE_DRIVER), createStorage(env), GET /files/:token (links do driver local)
+│  └─ database/            seed-data.ts (usuários, pacientes, atendimentos e documentos dos mocks), seed.ts (runSeed(connection, { storage })),
+│                          regional-data.ts (mesmo gerador do mock do site), demo-pdf.ts, transaction.runner.ts
+└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, regional, patient-app, swagger;
+                           unitários: cpf.spec.ts, uploads.spec.ts, storage.spec.ts, password.spec.ts
 ```
 
-Testado manualmente: a API sobe, o login responde 401/400 com mensagem em português, `/auth/me` sem token dá 401 e o Swagger abre. Ainda **não há usuários no banco** (eles chegam com o seed).
+- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. App: Maria (`22916926402`) e João (`27952204408`), senha `paciente123`; Ana (`50717927296`, nascida em `1996-11-05`) sem conta, para demonstrar o primeiro acesso. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
+- Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código
 
@@ -92,6 +140,9 @@ Testado manualmente: a API sobe, o login responde 401/400 com mensagem em portug
   - `id` como string;
   - datas `AAAA-MM-DD` e data/hora em ISO;
   - CPF só com dígitos.
+- `@Prop` de campo com tipo união (ex.: `role: UserRole`, `status: 'ativa' | ...`) precisa de `type: String` explícito: nos testes o Vitest não gera o tipo de uniões e o Mongoose quebra.
+- **CPF:** validado só por regras, sem consulta externa (`cpfProblem` em `common/cpf.ts`): formato `22916926402` ou `229.169.264-02`, dígitos verificadores, 11 dígitos iguais recusados e CPFs de exemplo conhecidos (`12345678909`, `11144477735`...) recusados com mensagem própria. No DTO: `@NormalizeCpf() @IsCpf()`; na URL: `ParseCpfPipe`.
+- **Nada de CPF sequencial ou de exemplo em seed, testes ou Swagger:** usar CPFs fictícios gerados aleatoriamente (`SEED_CPFS` e os do `test/patients.e2e-spec.ts`). Os mocks do front ainda usam `123.456.789-09` etc.; avisar o Gustavo (no modo API o site usa os dados do seed).
 - Erros: lançar `NotFoundException('...')`, `ForbiddenException('...')` etc. com mensagem própria; o filtro cuida do formato.
 - Configuração sempre por variável de ambiente (`ConfigService`), nunca fixa no código. A API precisa ser **stateless** (nada gravado em disco ou memória do servidor), para escalar em várias instâncias na AWS.
 - Versões:
@@ -100,9 +151,15 @@ Testado manualmente: a API sobe, o login responde 401/400 com mensagem em portug
 
 ## Próximos blocos (em ordem)
 
-Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed dele**.
+Cada bloco de funcionalidade **inclui os testes e2e dele**, **a parte do seed dele** e **a documentação Swagger das rotas dele**.
 
-### Bloco 5 — Base de testes, seed e saúde → `test(backend): base de testes e2e, seed de usuários e health check`
+### ✅ Bloco 5 — Base de testes, seed, saúde e Swagger (em 5 commits)
+1. `docs: decisões de infraestrutura, custos e Swagger`
+2. `feat(backend): seed de usuários e modo dev:memory`
+3. `feat(backend): health check da API e do MongoDB`
+4. `docs(backend): Swagger documentado e exportação do OpenAPI`
+5. `test(backend): base de testes e2e e testes de autenticação, health e Swagger`
+
 - `src/database/seed.ts`:
   - exporta `runSeed(connection)`, que limpa as coleções e insere os dados;
   - quando roda direto (`npm run seed`), conecta no `MONGODB_URI`.
@@ -118,8 +175,18 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - roda o seed;
   - tem uma função `login(email)` que devolve o token.
 - `test/auth.e2e-spec.ts`: login ok/401/400, `/auth/me` com e sem token, senha nunca aparece na resposta.
+- Swagger: `src/swagger.ts` (`setupSwagger`, `buildOpenApiDocument`), classes de resposta em `src/auth/auth.responses.ts`, script `src/openapi.ts` (`npm run openapi` → `docs/openapi.json`) e `test/swagger.e2e-spec.ts`.
 
-### Bloco 6 — Pacientes → `feat(backend): cadastro e prontuário unificado de pacientes`
+### ✅ Bloco 6 — Pacientes e auditoria (em 7 commits)
+1. `feat(backend): schema do paciente com o prontuário embutido`
+2. `feat(backend): validação de CPF e datas e DTO de cadastro de paciente`
+3. `feat(backend): trilha de auditoria de acesso ao prontuário (LGPD)`
+4. `feat(backend): rotas de pacientes com documentação Swagger`
+5. `feat(backend): pacientes no seed`
+6. `test(backend): testes e2e de pacientes e auditoria`
+7. `docs: atualiza o CONTINUAR com os blocos 5 e 6`
+
+Plano original:
 - `src/patients/patient.schema.ts`:
   - cpf (unique, index), fullName, birthDate (string AAAA-MM-DD), sex (`F|M|Outro`), bloodType (enum do contrato), phone?, email?, region;
   - listas embutidas `allergies`, `activeMedications`, `procedures`, `exams`, `clinicalConditions`, como subschemas com `jsonSchemaOptions` para o `_id` virar `id`.
@@ -137,7 +204,12 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
 - Auditoria (LGPD; o requisito não funcional fala em auditoria de acessos): módulo `audit` grava quem acessou cada prontuário (userId, action, patientCpf, data).
 - Seed: pacientes. Testes: 404, 201, 409, 400, gestor recebe 403.
 
-### Bloco 7 — Atendimentos → `feat(backend): registro de atendimentos com atualização do prontuário`
+### ✅ Bloco 7 — Atendimentos (em 8 commits)
+- Feito como planejado, mais: regras de data/resumo iguais às do formulário do site, remarcação de agendamento, agendamento de outro médico (403) ou de outro paciente (400), 409 se já registrado, CID-10 validado, auditoria `appointments.view` e `appointment.create`, mensagens legíveis em erros de lista.
+- `TransactionRunner` (`src/database/transaction.runner.ts`): `MONGODB_TRANSACTIONS=false` desliga a transação **só** para banco sem replica set (é como o Claude roda os testes no FerretDB).
+- Documentos ainda não entram no seed (sem arquivo para baixar); ficam para o bloco 8.
+
+Plano original:
 - Schema Appointment:
   - patientCpf, patientName, doctorId (ObjectId), doctorName, date (Date), status (`realizado|agendado`), reason?, summary;
   - documents [{fileName, type, uploadedAt, storageKey, mimeType, size}].
@@ -153,7 +225,17 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
 - Ligar `appointmentSummaries` no GET do paciente: só atendimentos `realizado`, do mais recente ao mais antigo, com a `specialty` do médico.
 - Seed: atendimentos. Testes: agendamento convertido, prontuário atualizado, 403 com outro médico.
 
-### Bloco 8 — Documentos com armazenamento em nuvem → `feat(backend): upload de receitas e laudos com armazenamento no S3`
+### ✅ Bloco 8 — Documentos com armazenamento em nuvem (em 6 commits)
+- Feito como planejado, com uma mudança no download: em vez de redirecionar, `GET /appointments/:id/documents/:documentId/download` devolve `{ url, expiresAt }`.
+  O link vale 5 min e não precisa do token (o site e o app só abrem a URL). No S3 é URL pré-assinada; no driver local, link assinado com HMAC servido por `GET /api/files/:token`.
+- Tipo do arquivo conferido pelos primeiros bytes (não pelo nome); chave no armazenamento = `appointments/<id>/<documentId>.<ext>` (nunca o nome do usuário).
+- S3: `ServerSideEncryption: AES256`; credenciais pela role da AWS, nunca no código. `S3_ENDPOINT` opcional para MinIO/LocalStack.
+- Se a gravação no banco falhar depois do upload, o arquivo é apagado do armazenamento.
+- Exame criado por laudo/exame guarda `appointmentId` e `documentId`. Auditoria: `document.upload` e `document.download`.
+- Seed grava PDFs de demonstração (`demo-pdf.ts`) para os 4 documentos dos mocks.
+- **Para o Gustavo (site):** botão de baixar = `GET .../download` com o token e depois `window.open(body.url)`.
+
+Plano original:
 - Interface `StorageService` com dois drivers, escolhidos pela variável `STORAGE_DRIVER`:
   - `local`: grava em `UPLOAD_DIR`; usado em desenvolvimento e nos testes;
   - `s3`: usa `@aws-sdk/client-s3` com bucket em `S3_BUCKET` e região em `AWS_REGION`.
@@ -166,8 +248,15 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - conferir a codificação de nome de arquivo com acento (o multer pode entregar em latin1).
 - `GET /appointments/:id/documents/:documentId/file`: no S3, redireciona para uma URL pré-assinada; no driver local, faz stream do arquivo.
 - Testes com o driver local: upload ok, tipo de arquivo proibido (400), arquivo grande demais (413), outro médico (403).
+- Seed: anexar aos atendimentos os documentos dos mocks (`frontend/src/mocks/appointments.ts`), gravando PDFs de exemplo no armazenamento para o download funcionar na demo.
 
-### Bloco 9 — Painel do gestor → `feat(backend): dados regionais para o painel do gestor`
+### ✅ Bloco 9 — Painel do gestor (em 6 commits)
+- Feito como planejado, com uma mudança: `GET /regions` é de **médico e gestor**, porque o formulário de cadastro de paciente do site usa a lista. `GET /regional-data` continua só do gestor.
+- Dados do seed com o mesmo gerador e a mesma semente do mock do site (12 meses completos × 6 regiões), representando totais que chegariam agregados dos sistemas municipais.
+- Região do paciente validada pela coleção `regions` (região nova cadastrada no banco já vale no formulário, sem mudar código).
+- Resposta sem `_id` nem nenhum dado de paciente (teste de anonimato).
+
+Plano original:
 - Coleções:
   - `regions`;
   - `regional_stats` {region, month 'AAAA-MM', appointments, uniquePatients, conditions[{name,count}]}, com subschema `_id: false` e índice em (region, month).
@@ -175,7 +264,15 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
 - Usar as regiões também para validar `region` no cadastro de paciente.
 - Seed: regiões e dados regionais. Testes: filtros funcionam e médico recebe 403.
 
-### Bloco 10 — Perfil paciente (para o app) → `feat(backend): acesso do paciente aos próprios dados`
+### ✅ Bloco 10 — Paciente no app, login por CPF estilo gov.br (em 6 commits)
+- Decisão do grupo: **CPF + senha**, como no gov.br. Médico e gestor continuam com e-mail.
+- Primeiro acesso (`POST /auth/patient-register`): CPF + data de nascimento conferidos com o prontuário + senha nova (regras em `common/password.ts`). Mensagens iguais para "não existe" e "não confere" (não revela quem é paciente nem quem tem conta).
+- Rotas `/me` documentadas na seção 5 do `API_CONTRACT.md`. Incluí `GET /me/access-log` (LGPD) e o download dos próprios documentos.
+- Seed: Maria e João com conta (`paciente123`); os outros sem conta, para o primeiro acesso.
+- O seed usa `syncIndexes()`: ajusta os índices de bancos criados em versões anteriores (o índice único de e-mail virou sparse).
+- **Atenção (bloco 13):** login e primeiro acesso precisam de limite de tentativas (`@nestjs/throttler`), senão dá para tentar senhas ou datas de nascimento em massa.
+
+Plano original:
 - Fica fora do contrato atual. Ao terminar, documentar no `API_CONTRACT.md` (seção nova "5. Paciente (app)").
 - Novo perfil `paciente` em `USER_ROLES`:
   - o usuário fica ligado ao `cpf` do paciente;
@@ -184,6 +281,7 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - `GET /me/record`: a "carteira digital de saúde";
   - `GET /me/appointments?status=realizado|agendado`: histórico e próximos atendimentos;
   - `GET /me/exams`: exames e resultados.
+  - `GET /me/access-log`: quem acessou o prontuário (LGPD: o paciente acompanha os acessos; usar `AuditService.findByPatient`).
 - Seed: um paciente de teste (ex.: Maria). Testes: paciente só vê os próprios dados e recebe 403 nas rotas de médico.
 
 ### Bloco 11 — Docker e CI → `chore(infra): Docker, docker-compose e pipeline de testes no GitHub Actions`
@@ -210,10 +308,10 @@ Cada bloco de funcionalidade **inclui os testes e2e dele** e **a parte do seed d
   - Banco: **MongoDB Atlas** (free tier, já é replica set) na região da AWS `sa-east-1`. Alternativa: DocumentDB, mais caro.
   - Site: manter na Vercel ou mover para S3 + CloudFront.
 - Workflow `.github/workflows/deploy.yml`: build da imagem, push no ECR e atualização do serviço ECS. Autenticação por OIDC, sem chave da AWS no GitHub.
-- **Custo:** ALB e Fargate saem do free tier. Ver se o grupo tem créditos (ex.: AWS Academy).
-  - Alternativa barata: **EC2 t3.micro** (free tier) com Docker Compose, mais S3 e CloudWatch.
-  - Com essa alternativa, o auto scaling vira **Auto Scaling Group**, ou a demonstração fica só no teste de carga.
-  - Destruir os recursos depois da apresentação (`cdk destroy`).
+- **Custo (ver "Decisões de infraestrutura e custo"):** teto de R$ 50 no projeto todo.
+  - Duas stacks no CDK: `ApiStack` (EC2 pequena com Docker + S3 + CloudWatch, fica no ar durante a entrega) e `ScaleTestStack` (ECS Fargate + ALB + auto scaling, sobe só para o teste de carga e é destruída logo depois).
+  - Se ECS/ALB não estiverem liberados no plano Free, a escalabilidade vira **Auto Scaling Group** de EC2.
+  - Destruir tudo depois da apresentação (`cdk destroy --all`).
 - `docs/infraestrutura.md`: diagrama da arquitetura AWS, passo a passo do deploy, custos.
 
 ### Bloco 13 — Pasta `tests/` (Qualidade) → `test: plano de testes, testes de carga e relatórios`

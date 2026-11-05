@@ -9,6 +9,7 @@
     "dev": "nest start --watch",
     "dev:memory": "nest start --watch --entryFile dev-memory",
     "seed": "nest build && node dist/database/seed.js",
+    "openapi": "nest build && node dist/openapi.js",
     "typecheck": "tsc --noEmit",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
   },
@@ -16,6 +17,8 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1162.0",
+    "@aws-sdk/s3-request-presigner": "^3.1162.0",
     "@nestjs/common": "^12.3.3",
     "@nestjs/config": "^12.1.0",
     "@nestjs/core": "^12.3.3",

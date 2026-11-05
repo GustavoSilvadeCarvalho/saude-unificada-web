@@ -11,6 +11,21 @@ const DEFAULT_MESSAGES: Partial<Record<number, string>> = {
   [HttpStatus.PAYLOAD_TOO_LARGE]: 'Arquivo muito grande. O limite é de 10 MB.',
 }
 
+// Mensagens do multer (upload) traduzidas para o usuário. O Nest às vezes acrescenta
+// o nome do campo (ex.: "Unexpected file field - arquivo"), por isso a comparação é pelo começo.
+const TRANSLATED_MESSAGES: [prefix: string, message: string][] = [
+  ['Unexpected field', 'Envie o arquivo no campo "file".'],
+  ['Unexpected file field', 'Envie o arquivo no campo "file".'],
+  ['Too many files', 'Envie um arquivo por vez.'],
+  ['Too many fields', 'Campos demais no formulário.'],
+  ['Multipart: Boundary not found', 'Envie o arquivo como multipart/form-data.'],
+]
+
+function translate(message: string | undefined): string | undefined {
+  if (!message) return message
+  return TRANSLATED_MESSAGES.find(([prefix]) => message.startsWith(prefix))?.[1] ?? message
+}
+
 const NEST_DEFAULT_MESSAGES = new Set([
   'Unauthorized',
   'Forbidden',
@@ -36,7 +51,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus()
       const body = exception.getResponse()
       const raw = typeof body === 'string' ? body : (body as { message?: string | string[] }).message
-      const custom = Array.isArray(raw) ? raw.join(' ') : raw
+      const joined = Array.isArray(raw) ? raw.join(' ') : raw
+      const custom = translate(joined)
       // Mensagens padrão do Nest/Multer vêm em inglês; nesses casos usamos as nossas
       const useDefault = !custom || NEST_DEFAULT_MESSAGES.has(custom)
       return { status, message: useDefault ? (DEFAULT_MESSAGES[status] ?? custom ?? 'Erro na requisição.') : custom }

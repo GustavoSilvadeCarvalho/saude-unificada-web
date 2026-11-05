@@ -22,8 +22,10 @@ export class AuthGuard implements CanActivate {
     if (scheme !== 'Bearer' || !token) throw new UnauthorizedException('Faça login para continuar.')
 
     try {
-      const payload = await this.jwtService.verifyAsync<{ sub: string; name: string; role: UserRole }>(token)
-      request.user = { id: payload.sub, name: payload.name, role: payload.role }
+      const payload = await this.jwtService.verifyAsync<{ sub: string; name: string; role: UserRole; cpf?: string }>(
+        token,
+      )
+      request.user = { id: payload.sub, name: payload.name, role: payload.role, cpf: payload.cpf }
     } catch {
       throw new UnauthorizedException('Sessão inválida ou expirada. Faça login novamente.')
     }

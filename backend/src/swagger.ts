@@ -1,0 +1,58 @@
+import { readFileSync } from 'node:fs'
+import type { INestApplication } from '@nestjs/common'
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
+
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+  version: string
+}
+
+const DESCRIPTION = `
+API da plataforma **Saúde Unificada**: prontuário unificado por CPF, usada pelo site (médicos e gestores) e pelo app (pacientes).
+
+**Como testar por aqui**
+1. Abra *Autenticação → POST /api/auth/login* e clique em **Execute** (o exemplo já vem com o médico de teste).
+2. Copie o \`token\` da resposta, clique em **Authorize** (cadeado no topo) e cole o token.
+3. As outras rotas passam a mandar o token automaticamente (ele fica salvo mesmo se a página recarregar).
+
+**Usuários de teste** (ambiente de desenvolvimento e demonstração), senha \`123456\`:
+- \`medico@teste.com\`: médico (Clínica Médica)
+- \`cardio@teste.com\`: médica (Cardiologia)
+- \`gestor@teste.com\`: gestora pública
+
+**Pacientes no app** (\`POST /auth/patient-login\`, CPF + senha \`paciente123\`): Maria \`22916926402\` e João \`27952204408\`.
+Primeiro acesso (\`POST /auth/patient-register\`): Ana \`50717927296\`, nascida em \`1996-11-05\`.
+
+Erros sempre voltam como \`{ "statusCode": 401, "message": "..." }\`, com a mensagem em português.
+Contrato completo: \`docs/API_CONTRACT.md\`.
+`.trim()
+
+/** Monta o documento OpenAPI a partir dos decorators dos controllers */
+export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
+  const config = new DocumentBuilder()
+    .setTitle('Saúde Unificada — API')
+    .setDescription(DESCRIPTION)
+    .setVersion(version)
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Token devolvido pelo login' })
+    .addTag('Autenticação', 'Login (site: e-mail; app: CPF, como no gov.br), primeiro acesso do paciente e usuário logado')
+    .addTag('Pacientes', 'Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)')
+    .addTag('Atendimentos', 'Agenda do médico, histórico do paciente e registro de atendimento')
+    .addTag('Documentos', 'Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)')
+    .addTag('Dados regionais', 'Painel do gestor público: totais agregados e anônimos por região e mês')
+    .addTag('Paciente (app)', 'Carteira digital de saúde, histórico, próximos atendimentos, exames e quem acessou o prontuário')
+    .addTag('Saúde', 'Status da API e do banco (monitoramento e load balancer)')
+    .build()
+  return SwaggerModule.createDocument(app, config)
+}
+
+/** Swagger UI em /api/docs e o JSON em /api/docs-json */
+export function setupSwagger(app: INestApplication) {
+  SwaggerModule.setup('api/docs', app, () => buildOpenApiDocument(app), {
+    jsonDocumentUrl: 'api/docs-json',
+    customSiteTitle: 'Saúde Unificada — API',
+    swaggerOptions: {
+      persistAuthorization: true, // mantém o token depois de recarregar a página
+      displayRequestDuration: true,
+      tryItOutEnabled: true,
+    },
+  })
+}
