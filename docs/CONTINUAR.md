@@ -82,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3) e **bloco 9** (painel do gestor) prontos. Próximo: **bloco 10** (perfil paciente para o app).
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor) e **bloco 10** (paciente no app, login por CPF) prontos. Próximo: **bloco 11** (Docker e CI) e o **app mobile**.
 
 ```
 backend/
@@ -97,7 +97,7 @@ backend/
 │  ├─ openapi.ts           gera docs/openapi.json sem banco (modo preview do Nest)
 │  ├─ swagger.ts           setupSwagger / buildOpenApiDocument (UI em /api/docs, JSON em /api/docs-json)
 │  ├─ app.setup.ts         configureApp(app): prefixo /api, CORS, ValidationPipe(whitelist, transform), filtro de erros, Swagger
-│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments, Regions
+│  ├─ app.module.ts        Config, Mongoose, Storage, Users, Auth, Health, Patients, Appointments, Regions, Me
 │  ├─ common/
 │  │  ├─ cpf.ts / cpf.pipe.ts      onlyDigits, isValidCpf, completeCpf / ParseCpfPipe (CPF da URL → dígitos, senão 400)
 │  │  ├─ validators.ts     @IsCpf(), @IsDateOnly({ notFuture }), isDateOnly, todayDateOnly
@@ -106,12 +106,14 @@ backend/
 │  │  ├─ roles.ts          USER_ROLES, @Roles(...), @Public(), AuthUser {id,name,role}
 │  │  ├─ error-response.ts ErrorResponse (Swagger)
 │  │  ├─ validation.ts     validationExceptionFactory: mensagens legíveis ("Alergia 2: ...") no ValidationPipe
+│  │  ├─ password.ts       passwordProblem: regras da senha do paciente (8+, letras e números, sem CPF/nascimento, não comum)
 │  │  ├─ uploads.ts        detectFileType (PDF/JPG/PNG pelo conteúdo), cleanFileName (acento/latin1), MAX_UPLOAD_BYTES
 │  │  ├─ env.ts            loadEnvFile() para scripts fora do Nest
 │  │  ├─ current-user.decorator.ts, transforms.ts (@EmptyToUndefined, @Trim, @Digits)
 │  │  └─ http-exception.filter.ts   erro = { statusCode, message } em português; E11000 → 409
-│  ├─ users/               schema User, UsersService
-│  ├─ auth/                POST /auth/login, GET /auth/me; AuthGuard global (JWT + @Roles)
+│  ├─ users/               schema User (email p/ medico e gestor, cpf p/ paciente; índices únicos sparse), UsersService
+│  ├─ auth/                POST /auth/login (site), POST /auth/patient-login e /auth/patient-register (app, CPF), GET /auth/me; AuthGuard global (JWT + @Roles; paciente leva o CPF no token)
+│  ├─ me/                  rotas do app do paciente: /me/record, /me/appointments, /me/exams, /me/access-log, download de documento próprio
 │  ├─ health/              GET /health (API + MongoDB, 503 se o banco cair), GET /health/live (load balancer)
 │  ├─ audit/               AuditLog (audit_logs: userId, userName, userRole, action, patientCpf, at); AuditService.record / findByPatient
 │  ├─ patients/            schema com o prontuário embutido; GET /patients/:cpf (com appointmentSummaries) e POST /patients (só medico, auditados)
@@ -121,11 +123,11 @@ backend/
 │  ├─ storage/             StorageService (local | s3, por STORAGE_DRIVER), createStorage(env), GET /files/:token (links do driver local)
 │  └─ database/            seed-data.ts (usuários, pacientes, atendimentos e documentos dos mocks), seed.ts (runSeed(connection, { storage })),
 │                          regional-data.ts (mesmo gerador do mock do site), demo-pdf.ts, transaction.runner.ts
-└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, regional, swagger;
-                           unitários: cpf.spec.ts, uploads.spec.ts, storage.spec.ts
+└─ test/                   helpers.ts (createTestApp, login, loginUser; uploads numa pasta temporária) + e2e de auth, health, patients, appointments, documents, regional, patient-app, swagger;
+                           unitários: cpf.spec.ts, uploads.spec.ts, storage.spec.ts, password.spec.ts
 ```
 
-- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
+- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. App: Maria (`22916926402`) e João (`27952204408`), senha `paciente123`; Ana (`50717927296`, nascida em `1996-11-05`) sem conta, para demonstrar o primeiro acesso. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
 - Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código
@@ -262,7 +264,15 @@ Plano original:
 - Usar as regiões também para validar `region` no cadastro de paciente.
 - Seed: regiões e dados regionais. Testes: filtros funcionam e médico recebe 403.
 
-### Bloco 10 — Perfil paciente (para o app) → `feat(backend): acesso do paciente aos próprios dados`
+### ✅ Bloco 10 — Paciente no app, login por CPF estilo gov.br (em 6 commits)
+- Decisão do grupo: **CPF + senha**, como no gov.br. Médico e gestor continuam com e-mail.
+- Primeiro acesso (`POST /auth/patient-register`): CPF + data de nascimento conferidos com o prontuário + senha nova (regras em `common/password.ts`). Mensagens iguais para "não existe" e "não confere" (não revela quem é paciente nem quem tem conta).
+- Rotas `/me` documentadas na seção 5 do `API_CONTRACT.md`. Incluí `GET /me/access-log` (LGPD) e o download dos próprios documentos.
+- Seed: Maria e João com conta (`paciente123`); os outros sem conta, para o primeiro acesso.
+- O seed usa `syncIndexes()`: ajusta os índices de bancos criados em versões anteriores (o índice único de e-mail virou sparse).
+- **Atenção (bloco 13):** login e primeiro acesso precisam de limite de tentativas (`@nestjs/throttler`), senão dá para tentar senhas ou datas de nascimento em massa.
+
+Plano original:
 - Fica fora do contrato atual. Ao terminar, documentar no `API_CONTRACT.md` (seção nova "5. Paciente (app)").
 - Novo perfil `paciente` em `USER_ROLES`:
   - o usuário fica ligado ao `cpf` do paciente;

@@ -63,7 +63,7 @@ Resposta `200`:
 }
 ```
 
-- `role`: `"medico"` | `"gestor"` (pacientes usam apenas o app).
+- `role`: `"medico"` | `"gestor"` (pacientes usam o app e entram pelo CPF: ver seção 5).
 - `crm` e `specialty` só existem para médicos.
 - A senha **nunca** deve vir na resposta.
 - Erro: `401` com `{ "message": "E-mail ou senha inválidos." }`.
@@ -311,6 +311,51 @@ Os indicadores e gráficos (totais, média mensal, ranking de condições, evolu
 
 ---
 
+## 5. Paciente (app)
+
+O paciente entra **pelo CPF**, como no app do gov.br. O token dele só abre as rotas desta seção (`403` nas outras), e tudo é **somente leitura**: quem atualiza o prontuário é o profissional, no atendimento.
+
+### `POST /auth/patient-login` (público)
+
+```json
+{ "cpf": "22916926402", "password": "paciente123" }
+```
+
+Resposta `200`: igual ao login do site, com `user.role = "paciente"` e `user.cpf` (sem `email`). CPF com ou sem máscara.
+Erro: `401` "CPF ou senha inválidos." (mesma mensagem para CPF sem conta e senha errada).
+
+### `POST /auth/patient-register` (público) — primeiro acesso
+
+```json
+{ "cpf": "50717927296", "birthDate": "1996-11-05", "password": "meuApp2026" }
+```
+
+- CPF + data de nascimento precisam bater com o prontuário (criado pelo médico no primeiro atendimento). Se não baterem: `400` "Não encontramos um cadastro com esse CPF e essa data de nascimento. ..." (mesma mensagem para CPF sem prontuário e data errada).
+- Senha: 8 a 64 caracteres, com letras e números; não pode ser uma senha comum nem conter o CPF ou a data de nascimento (`400` com o motivo).
+- CPF que já tem conta: `409` "Este CPF já tem conta. Use a opção Entrar.".
+- Resposta `201`: `{ token, user }` (já entra).
+
+### Rotas do paciente logado
+
+| Rota | Tela do app | Resposta |
+|---|---|---|
+| `GET /me/record` | Carteira Digital de Saúde | `Patient` (mesmo formato de `GET /patients/:cpf`) |
+| `GET /me/appointments?status=realizado` | Histórico (o que já fez) | `Appointment[]`, mais recente primeiro |
+| `GET /me/appointments?status=agendado` | Atendimentos (o que vai fazer) | `Appointment[]`, mais próximo primeiro |
+| `GET /me/exams` | Exames e resultados | `ExamReport[]`, mais recente primeiro |
+| `GET /me/access-log` | Quem acessou meus dados (LGPD) | `[{ at, description, userName, userRole, action }]` |
+| `GET /me/appointments/:id/documents/:documentId/download` | Baixar receita/laudo | `{ url, expiresAt }` (link de 5 min, sem token) |
+
+Exemplo de `GET /me/access-log`:
+
+```json
+[
+  { "at": "2026-10-01T14:30:00.000Z", "description": "Abriu o seu prontuário", "userName": "Dr. Rafael Moreira Lima", "userRole": "medico", "action": "patient.view" }
+]
+```
+
+---
+
 ## Glossário (campo → significado)
 
 | Campo | Significado |
@@ -329,6 +374,6 @@ Os indicadores e gráficos (totais, média mensal, ranking de condições, evolu
 | `reason` | motivo da consulta |
 | `summary` | resumo do atendimento |
 | `documents` | documentos anexados |
-| `role` | perfil (`medico` \| `gestor`) |
+| `role` | perfil (`medico` \| `gestor` \| `paciente`) |
 | `specialty` | especialidade |
 | `uniquePatients` | pacientes únicos atendidos no mês |
