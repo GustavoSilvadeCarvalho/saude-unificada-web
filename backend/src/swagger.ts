@@ -34,6 +34,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addTag('Pacientes', 'Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)')
     .addTag('Atendimentos', 'Agenda do médico, histórico do paciente e registro de atendimento')
     .addTag('Documentos', 'Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)')
+    .addTag('Dados regionais', 'Painel do gestor público: totais agregados e anônimos por região e mês')
     .addTag('Saúde', 'Status da API e do banco (monitoramento e load balancer)')
     .build()
   return SwaggerModule.createDocument(app, config)

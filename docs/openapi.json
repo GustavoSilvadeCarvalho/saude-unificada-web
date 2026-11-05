@@ -348,6 +348,163 @@
         ]
       }
     },
+    "/api/regions": {
+      "get": {
+        "description": "Usada no filtro do painel do gestor e no cadastro de paciente (por isso médico também acessa).",
+        "operationId": "RegionsController_regions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": [
+                    "Grande São Paulo",
+                    "Campinas",
+                    "Baixada Santista",
+                    "Vale do Paraíba",
+                    "Sorocaba",
+                    "Ribeirão Preto"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Regiões de saúde",
+        "tags": [
+          "Dados regionais"
+        ]
+      }
+    },
+    "/api/regional-data": {
+      "get": {
+        "description": "Uma linha por região por mês, ordenada por região e mês. Os dados são agregados e anônimos (sem CPF nem nome). Totais, médias, ranking de condições e evolução mensal são calculados no front a partir desta lista.",
+        "operationId": "RegionsController_regionalData",
+        "parameters": [
+          {
+            "name": "region",
+            "required": false,
+            "in": "query",
+            "description": "Uma região de GET /regions (vazio = todas)",
+            "schema": {
+              "example": "Campinas",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Mês inicial, inclusive (AAAA-MM)",
+            "schema": {
+              "example": "2026-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Mês final, inclusive (AAAA-MM)",
+            "schema": {
+              "example": "2026-10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegionalRecordResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mês em formato inválido, mês inicial depois do final, ou região inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "O mês inicial não pode ser depois do mês final."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o gestor público acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dados regionais agregados para o painel do gestor",
+        "tags": [
+          "Dados regionais"
+        ]
+      }
+    },
     "/api/appointments": {
       "get": {
         "description": "Informe **um** filtro. `doctorId`: só a própria agenda, em ordem crescente de data. `patientCpf`: atendimentos do paciente com todos os médicos, do mais recente ao mais antigo (acesso auditado).",
@@ -801,6 +958,10 @@
     {
       "name": "Documentos",
       "description": "Receitas, laudos e exames anexados aos atendimentos (arquivos no S3)"
+    },
+    {
+      "name": "Dados regionais",
+      "description": "Painel do gestor público: totais agregados e anônimos por região e mês"
     },
     {
       "name": "Saúde",
@@ -1370,6 +1531,61 @@
           "sex",
           "bloodType",
           "region"
+        ]
+      },
+      "ConditionCountResponse": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Hipertensão"
+          },
+          "count": {
+            "type": "number",
+            "example": 1020
+          }
+        },
+        "required": [
+          "name",
+          "count"
+        ]
+      },
+      "RegionalRecordResponse": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string",
+            "example": "Campinas"
+          },
+          "month": {
+            "type": "string",
+            "example": "2026-09",
+            "description": "AAAA-MM"
+          },
+          "appointments": {
+            "type": "number",
+            "example": 6120,
+            "description": "Atendimentos no mês"
+          },
+          "uniquePatients": {
+            "type": "number",
+            "example": 4010,
+            "description": "Pacientes únicos atendidos no mês"
+          },
+          "conditions": {
+            "description": "Condições mais atendidas, da maior para a menor",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConditionCountResponse"
+            }
+          }
+        },
+        "required": [
+          "region",
+          "month",
+          "appointments",
+          "uniquePatients",
+          "conditions"
         ]
       },
       "AttachedDocumentResponse": {
