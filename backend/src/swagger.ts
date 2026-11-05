@@ -32,6 +32,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Token devolvido pelo login' })
     .addTag('Autenticação', 'Login e dados do usuário logado')
     .addTag('Pacientes', 'Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)')
+    .addTag('Atendimentos', 'Agenda do médico, histórico do paciente e registro de atendimento')
     .addTag('Saúde', 'Status da API e do banco (monitoramento e load balancer)')
     .build()
   return SwaggerModule.createDocument(app, config)

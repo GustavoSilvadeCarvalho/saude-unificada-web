@@ -151,7 +151,7 @@ export class PatientResponse {
 
   @ApiProperty({
     type: [AppointmentSummaryResponse],
-    description: 'Só atendimentos realizados, do mais recente para o mais antigo (preenchido a partir do bloco 7)',
+    description: 'Só atendimentos realizados, do mais recente para o mais antigo',
   })
   appointmentSummaries: AppointmentSummaryResponse[]
 }

@@ -347,6 +347,206 @@
           "Pacientes"
         ]
       }
+    },
+    "/api/appointments": {
+      "get": {
+        "description": "Informe **um** filtro. `doctorId`: só a própria agenda, em ordem crescente de data. `patientCpf`: atendimentos do paciente com todos os médicos, do mais recente ao mais antigo (acesso auditado).",
+        "operationId": "AppointmentsController_list",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": false,
+            "in": "query",
+            "description": "Agenda do médico (só o próprio médico). Ordem: data crescente",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          },
+          {
+            "name": "patientCpf",
+            "required": false,
+            "in": "query",
+            "description": "Histórico do paciente, de todos os médicos. Ordem: data decrescente",
+            "schema": {
+              "example": "22916926402",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AppointmentResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nenhum filtro, os dois filtros juntos, ou filtro inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Informe doctorId ou patientCpf."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Agenda de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Você só pode ver a sua própria agenda."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Agenda do médico ou histórico do paciente",
+        "tags": [
+          "Atendimentos"
+        ]
+      },
+      "post": {
+        "description": "Tudo numa transação: o atendimento, as alergias, medicamentos e condições novas do paciente e o registro de auditoria. Com `scheduledAppointmentId`, conclui (ou remarca) o agendamento em vez de criar outro. Realizado: data não pode ser no futuro e o resumo tem no mínimo 10 caracteres. Agendado: data no futuro e listas vazias.",
+        "operationId": "AppointmentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppointmentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos ou regra do atendimento não atendida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Um atendimento realizado não pode ter data no futuro."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "doctorId diferente do médico logado, agendamento de outro médico, ou perfil sem permissão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Você só pode registrar atendimentos em seu próprio nome."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Paciente ou agendamento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Paciente não encontrado."
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O agendamento informado já foi registrado como realizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Este atendimento já foi registrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registra um atendimento e atualiza o prontuário",
+        "tags": [
+          "Atendimentos"
+        ]
+      }
     }
   },
   "info": {
@@ -363,6 +563,10 @@
     {
       "name": "Pacientes",
       "description": "Cadastro e prontuário unificado por CPF (só médicos; acessos auditados)"
+    },
+    {
+      "name": "Atendimentos",
+      "description": "Agenda do médico, histórico do paciente e registro de atendimento"
     },
     {
       "name": "Saúde",
@@ -829,7 +1033,7 @@
             }
           },
           "appointmentSummaries": {
-            "description": "Só atendimentos realizados, do mais recente para o mais antigo (preenchido a partir do bloco 7)",
+            "description": "Só atendimentos realizados, do mais recente para o mais antigo",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AppointmentSummaryResponse"
@@ -923,6 +1127,268 @@
           "sex",
           "bloodType",
           "region"
+        ]
+      },
+      "AttachedDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80c01"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "receita_amoxicilina.pdf"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "laudo",
+              "exame",
+              "outro"
+            ],
+            "example": "receita"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "example": "2026-10-01T14:41:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "type",
+          "uploadedAt"
+        ]
+      },
+      "AppointmentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01"
+          },
+          "patientCpf": {
+            "type": "string",
+            "example": "22916926402"
+          },
+          "patientName": {
+            "type": "string",
+            "example": "Maria Aparecida da Silva"
+          },
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "realizado",
+              "agendado"
+            ],
+            "example": "realizado"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Retorno — controle glicêmico"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Paciente estável, glicemia em melhora. Mantida conduta."
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachedDocumentResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "patientCpf",
+          "patientName",
+          "doctorId",
+          "doctorName",
+          "date",
+          "status",
+          "summary",
+          "documents"
+        ]
+      },
+      "NewAllergyDto": {
+        "type": "object",
+        "properties": {
+          "substance": {
+            "type": "string",
+            "example": "Ibuprofeno"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "leve",
+              "moderada",
+              "grave"
+            ],
+            "example": "moderada"
+          },
+          "reaction": {
+            "type": "string",
+            "example": "Urticária"
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          }
+        },
+        "required": [
+          "substance",
+          "severity",
+          "recordedAt"
+        ]
+      },
+      "NewMedicationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Amoxicilina"
+          },
+          "dosage": {
+            "type": "string",
+            "example": "500 mg"
+          },
+          "frequency": {
+            "type": "string",
+            "example": "8 em 8 horas"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD"
+          },
+          "prescribedBy": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima",
+            "description": "Padrão: o médico do atendimento"
+          }
+        },
+        "required": [
+          "name",
+          "dosage",
+          "frequency",
+          "startDate"
+        ]
+      },
+      "NewConditionDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Sinusite aguda"
+          },
+          "cid": {
+            "type": "string",
+            "example": "J01",
+            "description": "Código CID-10 (ex.: I10, J45.0)"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ativa",
+              "controlada",
+              "resolvida"
+            ],
+            "example": "ativa"
+          },
+          "diagnosedAt": {
+            "type": "string",
+            "example": "2026-10-01",
+            "description": "AAAA-MM-DD, não pode ser no futuro"
+          }
+        },
+        "required": [
+          "name",
+          "status",
+          "diagnosedAt"
+        ]
+      },
+      "CreateAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "scheduledAppointmentId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80b01",
+            "description": "Se informado, conclui (ou remarca) esse agendamento em vez de criar outro"
+          },
+          "patientCpf": {
+            "type": "string",
+            "example": "22916926402"
+          },
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912",
+            "description": "Tem que ser o médico logado"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-01T14:30:00.000Z",
+            "description": "ISO 8601. Realizado: não pode ser no futuro. Agendado: tem que ser no futuro."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "realizado",
+              "agendado"
+            ],
+            "example": "realizado"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Retorno — controle glicêmico"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Paciente estável, glicemia em melhora. Mantida conduta.",
+            "description": "Obrigatório (mínimo de 10 caracteres) quando realizado; pode ser vazio no agendamento"
+          },
+          "newAllergies": {
+            "description": "Adicionadas às alergias do paciente",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewAllergyDto"
+            }
+          },
+          "newMedications": {
+            "description": "Adicionados aos medicamentos ativos",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewMedicationDto"
+            }
+          },
+          "newConditions": {
+            "description": "Adicionadas às condições clínicas",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewConditionDto"
+            }
+          }
+        },
+        "required": [
+          "patientCpf",
+          "doctorId",
+          "date",
+          "status",
+          "summary"
         ]
       }
     }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
+import { AppointmentsModule } from './appointments/appointments.module.js'
 import { AuthModule } from './auth/auth.module.js'
 import { HealthModule } from './health/health.module.js'
 import { PatientsModule } from './patients/patients.module.js'
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module.js'
     AuthModule,
     HealthModule,
     PatientsModule,
+    AppointmentsModule,
   ],
 })
 export class AppModule {}
