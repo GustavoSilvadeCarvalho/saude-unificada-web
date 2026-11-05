@@ -1,7 +1,7 @@
 # Contrato da API — Saúde Unificada
 
 Documento para alinhar o front-end web (e o app mobile) com o time do backend.
-Os tipos TypeScript equivalentes estão em [`src/types/index.ts`](src/types/index.ts) e as chamadas em [`src/services/api.ts`](src/services/api.ts).
+Os tipos TypeScript equivalentes estão em [`frontend/src/types/index.ts`](../frontend/src/types/index.ts) e as chamadas em [`frontend/src/services/api.ts`](../frontend/src/services/api.ts). A implementação fica em [`backend/`](../backend).
 
 ## Convenções gerais
 

@@ -1,5 +1,5 @@
 // Tipos das entidades: funcionam como contrato entre o front-end e a API.
-// Mantenha este arquivo sincronizado com o API_CONTRACT.md.
+// Mantenha este arquivo sincronizado com o docs/API_CONTRACT.md (raiz do monorepo).
 
 /* ---------- Usuários e autenticação ---------- */
 
