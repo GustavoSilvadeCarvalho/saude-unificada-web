@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, NotFoundException, Post } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, NotFoundException, Post, UseGuards } from '@nestjs/common'
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -7,6 +7,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
 import { CurrentUser } from '../common/current-user.decorator.js'
@@ -16,7 +17,14 @@ import { UsersService } from '../users/users.service.js'
 import { LoginResponse, UserResponse } from './auth.responses.js'
 import { AuthService } from './auth.service.js'
 import { LoginDto } from './login.dto.js'
+import { LoginThrottleGuard, TOO_MANY_ATTEMPTS } from './login-throttle.js'
 import { PatientLoginDto, PatientRegisterDto } from './patient-auth.dto.js'
+
+const TOO_MANY_ATTEMPTS_RESPONSE = {
+  type: ErrorResponse,
+  description: 'Tentativas demais em 1 minuto (por conta e por IP)',
+  example: { statusCode: 429, message: TOO_MANY_ATTEMPTS },
+}
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -28,6 +36,8 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @UseGuards(LoginThrottleGuard)
+  @ApiTooManyRequestsResponse(TOO_MANY_ATTEMPTS_RESPONSE)
   @HttpCode(200)
   @ApiOperation({
     summary: 'Login de profissional de saúde ou gestor',
@@ -50,6 +60,8 @@ export class AuthController {
 
   @Public()
   @Post('patient-login')
+  @UseGuards(LoginThrottleGuard)
+  @ApiTooManyRequestsResponse(TOO_MANY_ATTEMPTS_RESPONSE)
   @HttpCode(200)
   @ApiOperation({
     summary: 'Login do paciente no app (CPF e senha, como no gov.br)',
@@ -72,6 +84,8 @@ export class AuthController {
 
   @Public()
   @Post('patient-register')
+  @UseGuards(LoginThrottleGuard)
+  @ApiTooManyRequestsResponse(TOO_MANY_ATTEMPTS_RESPONSE)
   @ApiOperation({
     summary: 'Primeiro acesso do paciente: cria a senha do app',
     description:

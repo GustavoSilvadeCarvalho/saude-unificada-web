@@ -54,6 +54,20 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
+                }
+              }
+            }
           }
         },
         "summary": "Login de profissional de saúde ou gestor",
@@ -115,6 +129,20 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
+                }
+              }
+            }
           }
         },
         "summary": "Login do paciente no app (CPF e senha, como no gov.br)",
@@ -173,6 +201,20 @@
                 "example": {
                   "statusCode": 409,
                   "message": "Este CPF já tem conta. Use a opção Entrar."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
                 }
               }
             }

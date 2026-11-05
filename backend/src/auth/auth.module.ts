@@ -3,11 +3,13 @@ import { ConfigService } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
+import { ThrottlerModule } from '@nestjs/throttler'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
 import { UsersModule } from '../users/users.module.js'
 import { AuthController } from './auth.controller.js'
 import { AuthGuard } from './auth.guard.js'
 import { AuthService } from './auth.service.js'
+import { loginThrottleOptions } from './login-throttle.js'
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { AuthService } from './auth.service.js'
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN', '8h') },
       }),
     }),
+    ThrottlerModule.forRootAsync({ inject: [ConfigService], useFactory: loginThrottleOptions }),
   ],
   controllers: [AuthController],
   providers: [AuthService, { provide: APP_GUARD, useClass: AuthGuard }],
