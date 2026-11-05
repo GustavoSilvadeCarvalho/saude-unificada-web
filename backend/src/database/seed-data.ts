@@ -220,6 +220,17 @@ export const seedPatients: Patient[] = [
   },
 ]
 
+/* ---------- Contas do app (pacientes) ---------- */
+
+/** Senha das contas de paciente do seed (segue as regras do primeiro acesso: letras e números) */
+export const SEED_PATIENT_PASSWORD = 'paciente123'
+
+/**
+ * Pacientes que já têm conta no app (entram com CPF + senha).
+ * Os outros ficam sem conta, para demonstrar o primeiro acesso (CPF + data de nascimento).
+ */
+export const seedPatientAccounts: (keyof typeof SEED_CPFS)[] = ['maria', 'joao']
+
 /* ---------- Atendimentos (frontend/src/mocks/appointments.ts) ---------- */
 
 export interface SeedAppointment {

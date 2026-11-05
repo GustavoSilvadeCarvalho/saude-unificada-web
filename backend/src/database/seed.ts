@@ -15,7 +15,16 @@ import type { StorageService } from '../storage/storage.service.js'
 import { User, UserSchema } from '../users/user.schema.js'
 import { demoPdf } from './demo-pdf.js'
 import { buildRegionalData } from './regional-data.js'
-import { SEED_CPFS, SEED_PASSWORD, type SeedAppointment, seedAppointments, seedPatients, seedUsers } from './seed-data.js'
+import {
+  SEED_CPFS,
+  SEED_PASSWORD,
+  SEED_PATIENT_PASSWORD,
+  type SeedAppointment,
+  seedAppointments,
+  seedPatientAccounts,
+  seedPatients,
+  seedUsers,
+} from './seed-data.js'
 
 /**
  * Reaproveita o model se a conexão já tiver um (caso dos testes, que usam a conexão do Nest).
@@ -80,9 +89,10 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   const auditModel = getModel(connection, AuditLog.name, AuditLogSchema)
   const regionModel = getModel(connection, Region.name, RegionSchema)
   const regionalStatModel = getModel(connection, RegionalStat.name, RegionalStatSchema)
-  // Garante os índices (ex.: e-mail e CPF únicos) antes de inserir
+  // Deixa os índices iguais aos dos schemas (ex.: e-mail e CPF únicos), apagando os antigos
+  // que não existem mais. Assim um banco criado numa versão anterior continua funcionando.
   const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel]
-  await Promise.all(models.map((model) => model.init()))
+  await Promise.all(models.map((model) => model.syncIndexes()))
 
   // Regiões primeiro: o cadastro de paciente é validado por elas
   await regionModel.deleteMany({})
@@ -97,6 +107,16 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
 
   await patientModel.deleteMany({})
   await patientModel.insertMany(seedPatients)
+
+  // Contas do app para alguns pacientes (login por CPF, como no gov.br)
+  const patientPasswordHash = await bcrypt.hash(SEED_PATIENT_PASSWORD, 10)
+  await userModel.insertMany(
+    seedPatientAccounts.map((key) => {
+      const cpf = SEED_CPFS[key]
+      const patient = seedPatients.find((p) => p.cpf === cpf)
+      return { name: patient?.fullName, cpf, role: 'paciente', passwordHash: patientPasswordHash }
+    }),
+  )
 
   // Atendimentos: liga médico (por e-mail) e paciente (por CPF) aos registros criados acima
   const doctorByEmail = new Map(users.map((u) => [u.email, u]))
@@ -134,6 +154,7 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
 
   return {
     users: seedUsers.length,
+    patientAccounts: seedPatientAccounts.length,
     patients: seedPatients.length,
     appointments: seedAppointments.length,
     regions: REGIONS.length,
@@ -154,7 +175,8 @@ if (isMain) {
   try {
     const result = await runSeed(connection, { storage: createStorage(process.env) })
     console.log(
-      `Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}), ${result.patients} pacientes, ` +
+      `Seed concluído: ${result.users} usuários (senha de todos: ${SEED_PASSWORD}), ` +
+        `${result.patientAccounts} contas de paciente no app (senha ${SEED_PATIENT_PASSWORD}), ${result.patients} pacientes, ` +
         `${result.appointments} atendimentos, ${result.regions} regiões e ${result.regionalStats} linhas de dados regionais.`,
     )
   } finally {
