@@ -55,22 +55,21 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Decisões de infraestrutura e custo (definidas em 05/11)
 
-**Orçamento: no máximo R$ 50 no projeto inteiro (≈ US$ 9). Tudo que puder ser gratuito, é gratuito.**
+**Orçamento: no máximo R$ 100 no projeto inteiro (≈ US$ 18; era R$ 50 até o bloco 12). Tudo que puder ser gratuito, é gratuito.** A parte que cobra por hora só fica ligada nos testes, por algumas semanas e na gravação do vídeo.
 
 | O quê | Onde | Custo |
 |---|---|---|
-| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)**, região São Paulo | R$ 0 |
-| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado | centavos |
-| API "no ar" durante a entrega | 1 instância pequena (EC2 com Docker) | ~US$ 5–8 |
-| Teste de escalabilidade | ECS Fargate + ALB com auto scaling 1→3, **ligado só nas rodadas de teste** (~2 h) e destruído com `cdk destroy` | < US$ 1 |
-| Monitoramento | CloudWatch (logs com retenção de 7 dias, 1 dashboard, poucos alarmes) | ~R$ 0 |
+| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)** (cluster que o Matheus já tinha, banco `saude-unificada`) | R$ 0 |
+| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado (stack `SaudeUnificadaData`, fica ligada) | centavos |
+| API no ar + escalabilidade | **ECS Fargate Spot** (0,25 vCPU, 512 MB) com auto scaling 1→3 pela CPU, atrás de **ALB + CloudFront** (HTTPS grátis). Stack `SaudeUnificadaApi`, **sobe e desce sob demanda** | ~US$ 0,042/h (≈ R$ 0,23/h) |
+| Monitoramento | CloudWatch (logs 7 dias, dashboard, 4 alarmes por e-mail via SNS) + AWS Budgets em US$ 18 | ~R$ 0 |
 | Site | Vercel | R$ 0 |
 | Plano C | VMs com **OpenStack**, só na reta final e se a AWS não der certo | — |
 
-- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Conferir se ECS/ALB estão liberados no plano Free; se não, usar EC2 + Auto Scaling Group.
-- **Região sa-east-1 (São Paulo)** para API, S3 e Atlas: argumento de LGPD (dados de saúde no Brasil) e menor latência na demo.
-- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública.
-- **Alerta de orçamento (AWS Budgets)** em US$ 3 e US$ 8 no primeiro dia.
+- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Se ECS/ALB estiverem bloqueados no plano Free, trocar para o plano pago (os créditos continuam valendo).
+- **Região us-east-1 (Virgínia do Norte).** O plano era São Paulo (LGPD e latência), mas a conta foi criada pelo novo cadastro da AWS ("projetos", conta `Open Horizons`), cuja SCP gerenciada pela AWS só libera us-east-1, us-west-2 e a região do projeto: em sa-east-1 tudo volta `explicit deny`. us-east-1 é também a mais barata (~US$ 0,042/h com 1 tarefa). No relatório, citar São Paulo como o destino em produção por causa da LGPD.
+- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública. Por isso o Atlas libera `0.0.0.0/0` (o Fargate não tem IP fixo).
+- **Esquecer a API ligada 24 h por 3 semanas ≈ US$ 21**: estoura o teto. O orçamento avisa aos 50/80/100% e pela previsão. Rotina: `npm run deploy:api` → testar/gravar → `npm run destroy:api`.
 - **Limites do Atlas Free:** 512 MB, 100 operações/s, 500 conexões. O teste de carga mira principalmente o **login** (bcrypt gasta CPU e faz 1 leitura no banco): a CPU da API sobe e dispara o auto scaling sem estourar o limite do Atlas.
 
 ## Swagger (documentação viva da API)
@@ -82,13 +81,14 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF) e **bloco 11** (Docker e CI) prontos. Próximos: **bloco 12** (AWS) e o **app mobile**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) e **bloco 12** (infraestrutura AWS em `infra/`, falta o primeiro deploy na conta) prontos. Próximos: **bloco 13** (testes de qualidade e carga), **bloco 14** (integração) e o **app mobile**.
 
 ```
 backend/
 ├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e, test:cov, test:ci
 ├─ Dockerfile              multi-stage (build → deps de produção → runtime node:24-slim, usuário node, HEALTHCHECK em /api/health/live)
 ├─ scripts/smoke-test.mjs  teste de fumaça contra uma API no ar (local, Docker, AWS): node backend/scripts/smoke-test.mjs <url>
+├─ scripts/load-test.mjs   carga no login: node backend/scripts/load-test.mjs <url> [--duracao 300] [--usuarios 20] [--saida resultado.json]
 ├─ tsconfig.json           nodenext, decorators + emitDecoratorMetadata, strict
 ├─ tsconfig.build.json     rootDir ./src (o TS 6 exige rootDir explícito)
 ├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts e *.spec.ts; cobertura v8 com mínimo de 90% linhas / 80% branches
@@ -307,26 +307,22 @@ Plano original:
   - no frontend: build.
 - Badge do CI no README.
 
-### Bloco 12 — AWS → `chore(infra): infraestrutura AWS como código`
-- Infra como código em `infra/`, com **AWS CDK em TypeScript** (mesma linguagem do projeto). É a evidência de "configurações de cloud" que o manual pede.
-  - **ECR**: repositório da imagem Docker da API.
-  - **ECS Fargate + Application Load Balancer:**
-    - health check em `/api/health`;
-    - **auto scaling** por CPU, de 1 a 3 tarefas (evidência de escalabilidade).
-  - **S3**: bucket privado para os documentos, com criptografia e bloqueio de acesso público. A permissão vem pela role da tarefa ECS, sem chave no código.
-  - **Secrets Manager / SSM**: `JWT_SECRET` e `MONGODB_URI`.
-  - **CloudWatch:**
-    - logs da API;
-    - dashboard com CPU, memória, requisições e 5xx do ALB;
-    - alarmes de 5xx e de health check (monitoramento básico).
-  - Banco: **MongoDB Atlas** (free tier, já é replica set) na região da AWS `sa-east-1`. Alternativa: DocumentDB, mais caro.
-  - Site: manter na Vercel ou mover para S3 + CloudFront.
-- Workflow `.github/workflows/deploy.yml`: build da imagem, push no ECR e atualização do serviço ECS. Autenticação por OIDC, sem chave da AWS no GitHub.
-- **Custo (ver "Decisões de infraestrutura e custo"):** teto de R$ 50 no projeto todo.
-  - Duas stacks no CDK: `ApiStack` (EC2 pequena com Docker + S3 + CloudWatch, fica no ar durante a entrega) e `ScaleTestStack` (ECS Fargate + ALB + auto scaling, sobe só para o teste de carga e é destruída logo depois).
-  - Se ECS/ALB não estiverem liberados no plano Free, a escalabilidade vira **Auto Scaling Group** de EC2.
-  - Destruir tudo depois da apresentação (`cdk destroy --all`).
-- `docs/infraestrutura.md`: diagrama da arquitetura AWS, passo a passo do deploy, custos.
+### ✅ Bloco 12 — Infraestrutura AWS como código (em 6 commits)
+Detalhes, custos e passo a passo no Windows: [`docs/infraestrutura.md`](infraestrutura.md).
+- `infra/` com **AWS CDK em TypeScript** (aws-cdk-lib 2.275, TS 6, ESM, roda com `tsx`). Scripts: `synth`, `diff`, `bootstrap`, `deploy`, `deploy:api`, `destroy:api`, `destroy:all`, `typecheck`, `test`.
+- **`SaudeUnificadaData`** (fica ligada): bucket S3 privado (criptografado, só HTTPS, sem ACL, apaga uploads incompletos em 1 dia), tópico SNS de alertas (e-mail por `-c alertEmail=...`) e **AWS Budgets** de US$ 18 (avisos 50/80/100% + previsão).
+- **`SaudeUnificadaApi`** (sob demanda):
+  - VPC em 2 AZs só com subnets públicas, **sem NAT**;
+  - **ECS Fargate Spot** 0,25 vCPU / 512 MB (`-c useSpot=false` para o Fargate normal no dia da gravação), imagem montada do `backend/Dockerfile` pelo próprio CDK (vai para o ECR do bootstrap), circuit breaker com rollback;
+  - `MONGODB_URI` e `JWT_SECRET` do **SSM Parameter Store** (SecureString, criados à mão com a AWS CLI; nada de segredo no código); acesso ao S3 pela role da tarefa;
+  - **ALB** que só aceita o header secreto do CloudFront (direto no ALB → 403) e health check em `/api/health/live`;
+  - **CloudFront** com HTTPS, sem cache e repassando tudo menos o Host;
+  - **auto scaling 1→3** por CPU média (alvo 50%);
+  - **CloudWatch**: logs 7 dias, dashboard `saude-unificada-api` (tarefas saudáveis, CPU/memória, requisições, latência p50/p95, 4xx/5xx) e 4 alarmes com e-mail ao disparar e ao normalizar (fora do ar, 5xx, resposta lenta, CPU no limite).
+- `infra/test/infra.test.ts`: 18 testes (`node:test` + `Template` do CDK) das regras de custo, segurança, escalabilidade e monitoramento. Não precisa de conta AWS. Job **Infra** no CI (typecheck, testes, synth).
+- `backend/scripts/load-test.mjs`: carga no login (bcrypt = CPU, 1 leitura no Atlas), relatório a cada 15 s e JSON final (req/s, p50/p95/máx, erros). Teste local: 15 req/s, p95 658 ms, 0 erros.
+- Mudanças em relação ao plano original: sem EC2 fixa (a API inteira é a stack sob demanda, mais barata e já mostra o scaling); sem `deploy.yml` (o deploy é `npm run deploy` da máquina do Matheus, sem credencial da AWS no GitHub); SSM em vez do Secrets Manager (grátis).
+- **Falta fazer na AWS de verdade:** criar a conta/IAM, o Atlas M0, os parâmetros do SSM, `cdk bootstrap` e o primeiro deploy, rodar o seed no Atlas + S3 e o teste de carga, guardar os prints do dashboard e do scaling para o bloco 13.
 
 ### Bloco 13 — Pasta `tests/` (Qualidade) → `test: plano de testes, testes de carga e relatórios`
 O manual exige a pasta `/tests` na raiz com relatórios e evidências. Os testes de código continuam em `backend/test/`; a raiz organiza a parte de qualidade:
