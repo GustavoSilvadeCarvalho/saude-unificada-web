@@ -291,7 +291,7 @@ async function main() {
       '--resource-id', ctx.resourceId,
       '--max-items', '20',
     )
-  ).ScalingActivities.filter((a) => a.StartTime >= startedAt)
+  ).ScalingActivities.filter((a) => new Date(a.StartTime) >= new Date(startedAt)) // a CLI devolve horário com fuso, não em UTC
   const metricsStart = new Date(new Date(startedAt).getTime() - 5 * 60_000).toISOString()
   const metrics = await cloudWatchMetrics(ctx, metricsStart, endedAt)
 
