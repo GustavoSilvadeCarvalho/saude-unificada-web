@@ -1,3 +1,4 @@
+import { KEEP_ALIVE_TIMEOUT_MS } from '../src/app.setup.js'
 import { createTestApp, type TestContext } from './helpers.js'
 
 // Testes de segurança (não funcionais). Os casos estão descritos em tests/seguranca/casos-de-seguranca.md
@@ -22,6 +23,14 @@ describe('Segurança', () => {
       expect(res.headers['x-frame-options']).toBe('SAMEORIGIN')
       expect(res.headers['content-security-policy']).toContain("default-src 'self'")
       expect(res.headers['referrer-policy']).toBe('no-referrer')
+    })
+
+    it('segura a conexão aberta por mais tempo que o load balancer (evita 502 na AWS)', () => {
+      const server = ctx.app.getHttpServer()
+
+      expect(server.keepAliveTimeout).toBe(KEEP_ALIVE_TIMEOUT_MS)
+      expect(server.keepAliveTimeout).toBeGreaterThan(60_000) // tempo ocioso padrão do ALB
+      expect(server.headersTimeout).toBeGreaterThan(server.keepAliveTimeout)
     })
 
     it('não revela a tecnologia do servidor', async () => {
