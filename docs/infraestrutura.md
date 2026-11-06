@@ -142,6 +142,8 @@ node backend/scripts/smoke-test.mjs https://dxxxxxxxx.cloudfront.net   # 9 verif
    node backend/scripts/load-test.mjs https://dxxxxxxxx.cloudfront.net --duracao 600 --usuarios 20 --saida carga-aws.json
    ```
 3. Em ~3 minutos a CPU passa de 50% e o auto scaling sobe para 2 e depois 3 tarefas; o tempo de resposta cai. Depois da carga, ele volta para 1 tarefa.
+
+   Para o relatório, rode os cenários completos (1 tarefa fixa, auto scaling e volta ao normal) com `node tests/carga/cenarios-aws.mjs`: ele controla o auto scaling, roda a carga e salva as evidências em `tests/relatorios/` (ver [`tests/carga/README.md`](../tests/carga/README.md)).
 4. Evidências para o relatório: print do dashboard, o `carga-aws.json` e o histórico do auto scaling:
    ```powershell
    aws application-autoscaling describe-scaling-activities --service-namespace ecs --region us-east-1 --max-items 10
@@ -176,7 +178,7 @@ node backend/scripts/smoke-test.mjs https://dxxxxxxxx.cloudfront.net   # 9 verif
 ```powershell
 cd infra
 npm run destroy:api      # derruba a parte que cobra por hora (dados e S3 continuam)
-npm run deploy:api       # sobe de novo quando precisar (~10 min)
+npm run deploy:api       # sobe de novo quando precisar (~10 min); só a API, sem mexer no e-mail dos alertas nem no orçamento
 ```
 
 **Fim do projeto** (depois da apresentação):

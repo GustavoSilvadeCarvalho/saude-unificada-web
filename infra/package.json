@@ -10,7 +10,7 @@
     "diff": "cdk diff --all",
     "bootstrap": "cdk bootstrap",
     "deploy": "cdk deploy --all --require-approval never",
-    "deploy:api": "cdk deploy SaudeUnificadaApi --require-approval never",
+    "deploy:api": "cdk deploy SaudeUnificadaApi --exclusively --require-approval never",
     "destroy:api": "cdk destroy SaudeUnificadaApi --force",
     "destroy:all": "cdk destroy --all --force",
     "typecheck": "tsc --noEmit",
