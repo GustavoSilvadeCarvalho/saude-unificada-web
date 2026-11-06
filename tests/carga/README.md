@@ -52,46 +52,48 @@ node backend/scripts/load-test.mjs http://localhost:3000 --duracao 60 --usuarios
 
 ### AWS (C02 a C04)
 
-Passo a passo completo em [`docs/infraestrutura.md`](../../docs/infraestrutura.md), seção "Demonstrar a escalabilidade". Resumo:
+Passo a passo da infraestrutura em [`docs/infraestrutura.md`](../../docs/infraestrutura.md). Os três cenários rodam com um comando só, a partir da raiz do repositório:
 
-1. Suba a API com o limite de login desligado:
-
-   ```bash
-   cd infra && npm run deploy:api -- -c loginRateLimit=false
-   ```
-
-2. **C02:** trave em 1 tarefa e rode 5 minutos:
+1. Suba a API com o limite de login desligado (a carga faz muitos logins seguidos do mesmo IP e levaria 429):
 
    ```bash
-   aws application-autoscaling register-scalable-target --service-namespace ecs --scalable-dimension ecs:service:DesiredCount --resource-id service/<cluster>/<serviço> --min-capacity 1 --max-capacity 1 --region us-east-1
+   cd infra && npm run deploy:api -- -c loginRateLimit=false && cd ..
    ```
+
+2. Abra o dashboard `saude-unificada-api` do CloudWatch (o script mostra o link) e rode:
 
    ```bash
-   node backend/scripts/load-test.mjs https://<cloudfront> --duracao 300 --usuarios 20 --saida tests/relatorios/carga-aws-1-tarefa.json
+   node tests/carga/cenarios-aws.mjs
    ```
 
-3. **C03:** destrave (`--max-capacity 3`) e rode 10 minutos com o dashboard `saude-unificada-api` aberto no CloudWatch:
+   O [`cenarios-aws.mjs`](cenarios-aws.mjs) usa a AWS CLI já configurada e leva uns 35 minutos:
 
-   ```bash
-   node backend/scripts/load-test.mjs https://<cloudfront> --duracao 600 --usuarios 20 --saida tests/relatorios/carga-aws-autoscaling.json
-   ```
+   | Etapa | O que faz |
+   |---|---|
+   | C02 | trava o auto scaling em 1 tarefa, espera ela ficar saudável e roda 5 min de carga |
+   | C03 | libera o auto scaling (1 a 3) e roda 10 min de carga |
+   | C04 | sem carga, espera até 30 min o serviço voltar para 1 tarefa |
+   | fim | devolve o auto scaling para 1 a 3 (mesmo se der erro no meio), baixa o histórico do auto scaling e as métricas do CloudWatch e confere os critérios de aceite |
 
-4. **C04:** espere ~15 min e guarde o histórico do auto scaling:
+   Opções: `--usuarios 20`, `--c02 300`, `--c03 600`, `--c04 1800` (segundos) e `--cenarios C03,C04` para rodar só alguns.
 
-   ```bash
-   aws application-autoscaling describe-scaling-activities --service-namespace ecs --region us-east-1 --max-items 10 > tests/relatorios/autoscaling-atividades.json
-   ```
+3. Religue o limite de login (`cd infra && npm run deploy:api`) ou derrube a API (`npm run destroy:api`).
 
-5. Religue o limite de login (`npm run deploy:api`) ou derrube a API (`npm run destroy:api`).
+O script grava em `tests/relatorios/`:
+
+- `carga-aws-c02-AAAA-MM-DD.json` e `carga-aws-c03-AAAA-MM-DD.json`: resultado da carga, com req/s, p50 e p95 minuto a minuto (sem as amostras individuais);
+- `escalabilidade-aws-AAAA-MM-DD.json`: critérios de aceite, linha do tempo das tarefas (desejadas, rodando, saudáveis no ALB, a cada 20 s), atividades do auto scaling e as séries do CloudWatch (CPU, memória, tarefas saudáveis, requisições, p95 e 5xx por minuto).
+
+No fim, ele imprime as linhas prontas para a tabela de carga do relatório de qualidade.
 
 ## Evidências para guardar em `tests/relatorios/`
 
-- Os JSON da carga. Antes de commitar, apague o campo `samples`, que é grande:
+- Os JSON da carga. O `cenarios-aws.mjs` já salva sem as amostras; se rodar o `load-test.mjs` direto com `--saida`, apague o campo `samples`, que é grande, antes de commitar:
 
   ```bash
   node -e "const f=process.argv[1],fs=require('fs'),r=JSON.parse(fs.readFileSync(f));delete r.samples;fs.writeFileSync(f,JSON.stringify(r,null,2)+'\n')" arquivo.json
   ```
 
 - Prints do dashboard do CloudWatch durante o C03: tarefas saudáveis, CPU, requisições, tempo de resposta.
-- O `autoscaling-atividades.json`.
+- O `escalabilidade-aws-AAAA-MM-DD.json`.
 - Uma linha por cenário na tabela de carga do [relatório de qualidade](../relatorios).

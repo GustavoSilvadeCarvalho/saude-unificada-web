@@ -67,7 +67,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 | Plano C | VMs com **OpenStack**, só na reta final e se a AWS não der certo | — |
 
 - **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Se ECS/ALB estiverem bloqueados no plano Free, trocar para o plano pago (os créditos continuam valendo).
-- **Região us-east-1 (Virgínia do Norte).** O plano era São Paulo (LGPD e latência), mas a conta foi criada pelo novo cadastro da AWS ("projetos", conta `Open Horizons`), cuja SCP gerenciada pela AWS só libera us-east-1, us-west-2 e a região do projeto: em sa-east-1 tudo volta `explicit deny`. us-east-1 é também a mais barata (~US$ 0,042/h com 1 tarefa). No relatório, citar São Paulo como o destino em produção por causa da LGPD.
+- **Região us-east-1 (Virgínia do Norte).** O plano era São Paulo (LGPD e latência), mas a conta foi criada pelo novo cadastro da AWS ("projetos", conta `Open Horizons`), cuja SCP gerenciada pela AWS só libera us-east-1, us-west-2 e a região do projeto: em sa-east-1 tudo volta `explicit deny`. A mesma SCP bloqueava ECS, EC2, ELB, ECR, SSM e SNS mesmo em us-east-1; em 05/11 o Matheus usou **"Ativar recursos avançados"** (sem volta; remove o limite de gastos do projeto) e o deploy foi feito na conta `060692821732`. us-east-1 é também a mais barata (~US$ 0,042/h com 1 tarefa). No relatório, citar São Paulo como o destino em produção por causa da LGPD.
 - **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública. Por isso o Atlas libera `0.0.0.0/0` (o Fargate não tem IP fixo).
 - **Sem Lambda.** A API roda em contêiner (ECS Fargate). Se a conta bloquear algum serviço, contornar com passos manuais documentados, sem trocar a arquitetura para Lambda.
 - **Esquecer a API ligada 24 h por 3 semanas ≈ US$ 21**: estoura o teto. O orçamento avisa aos 50/80/100% e pela previsão. Rotina: `npm run deploy:api` → testar/gravar → `npm run destroy:api`.
@@ -82,7 +82,7 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) **bloco 12** (infraestrutura AWS em `infra/`; **primeiro deploy feito em 05/11**) e **bloco 13** (`tests/`, helmet, compression, limite de login, CORS, `npm audit` zerado; faltam só as rodadas de carga na AWS) prontos. Próximos: **cenários de carga C02–C04 na AWS**, **bloco 14** (integração) e o **app mobile**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) **bloco 12** (infraestrutura AWS em `infra/`; **primeiro deploy feito em 05/11**) e **bloco 13** (`tests/`, helmet, compression, limite de login, CORS, `npm audit` zerado; faltam só as rodadas de carga na AWS) prontos. Próximos: **cenários de carga C02–C04 na AWS** (`node tests/carga/cenarios-aws.mjs`, ~35 min, depois de `npm run deploy:api -- -c loginRateLimit=false`), **bloco 14** (integração) e o **app mobile**.
 
 **AWS no ar desde 05/11/2026** (conta `060692821732`, us-east-1, usuário IAM `saude-unificada-deploy`, CLI configurada no Linux):
 - API: `https://d1yvce4t23bis0.cloudfront.net/api` (Swagger em `/api/docs`). O endereço muda se a `SaudeUnificadaApi` for destruída e criada de novo.
@@ -331,7 +331,7 @@ Detalhes, custos e passo a passo no Windows: [`docs/infraestrutura.md`](infraest
 - `infra/test/infra.test.ts`: 18 testes (`node:test` + `Template` do CDK) das regras de custo, segurança, escalabilidade e monitoramento. Não precisa de conta AWS. Job **Infra** no CI (typecheck, testes, synth).
 - `backend/scripts/load-test.mjs`: carga no login (bcrypt = CPU, 1 leitura no Atlas), relatório a cada 15 s e JSON final (req/s, p50/p95/máx, erros). Teste local: 15 req/s, p95 658 ms, 0 erros.
 - Mudanças em relação ao plano original: sem EC2 fixa (a API inteira é a stack sob demanda, mais barata e já mostra o scaling); sem `deploy.yml` (o deploy é `npm run deploy` da máquina do Matheus, sem credencial da AWS no GitHub); SSM em vez do Secrets Manager (grátis).
-- **Falta fazer na AWS de verdade:** criar a conta/IAM, o Atlas M0, os parâmetros do SSM, `cdk bootstrap` e o primeiro deploy, rodar o seed no Atlas + S3 e o teste de carga, guardar os prints do dashboard e do scaling para o bloco 13.
+- Primeiro deploy feito em 05/11 (ver "Estado atual"). Falta só a rodada de carga na AWS (bloco 13).
 
 ### ✅ Bloco 13 — Qualidade e segurança (pasta `tests/`)
 - `backend`:
