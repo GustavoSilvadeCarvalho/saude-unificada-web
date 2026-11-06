@@ -124,6 +124,14 @@ export class ApiStack extends cdk.Stack {
       circuitBreaker: { rollback: true }, // deploy com erro volta sozinho para a versão anterior
       healthCheckGracePeriod: cdk.Duration.seconds(60),
     })
+    // No destroy, o CloudFormation removia a associação FARGATE/FARGATE_SPOT do cluster junto com o
+    // serviço e falhava com "capacity provider is in use". Com a dependência, o serviço sai primeiro.
+    // (o CDK só cria essa associação no synth, por isso o Aspect)
+    cdk.Aspects.of(this).add({
+      visit(node) {
+        if (node instanceof ecs.CfnClusterCapacityProviderAssociations) service.node.addDependency(node)
+      },
+    })
 
     // ---------- Load balancer (só aceita o que vem do CloudFront) ----------
     const alb = new elbv2.ApplicationLoadBalancer(this, 'Alb', { vpc, internetFacing: true })

@@ -176,6 +176,13 @@ describe('Escalabilidade', () => {
     })
   })
 
+  it('o destroy apaga o serviço antes de soltar o Fargate do cluster', () => {
+    const [association] = Object.keys(api.findResources('AWS::ECS::ClusterCapacityProviderAssociations'))
+    const [service] = Object.values(api.findResources('AWS::ECS::Service'))
+    assert.ok(association)
+    assert.ok(service.DependsOn.includes(association))
+  })
+
   it('deploy com erro volta sozinho para a versão anterior', () => {
     api.hasResourceProperties('AWS::ECS::Service', {
       DeploymentConfiguration: Match.objectLike({ DeploymentCircuitBreaker: { Enable: true, Rollback: true } }),
