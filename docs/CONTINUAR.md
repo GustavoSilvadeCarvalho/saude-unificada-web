@@ -139,6 +139,7 @@ backend/
 ```
 
 - Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. App: Maria (`22916926402`) e João (`27952204408`), senha `paciente123`; Ana (`50717927296`, nascida em `1996-11-05`) sem conta, para demonstrar o primeiro acesso. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
+- Dados extras de demonstração em `backend/src/database/seed-demo.ts` (09/11): 3 médicos (`pediatra@`, `gineco@`, `orto@teste.com`), `gestor2@teste.com`, 12 pacientes e 24 atendimentos, com contas no app para Sofia (`89313074893`), Roberto (`52525738080`) e Camila (`55991928819`). Ficam fora de `seed-data.ts` porque os testes contam os dados de lá.
 - Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código

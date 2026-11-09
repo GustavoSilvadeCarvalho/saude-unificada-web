@@ -53,7 +53,8 @@ docker compose down                                      # para (com -v apaga os
 
 - API: http://localhost:3000/api · Swagger: http://localhost:3000/api/docs
 - MongoDB pelo computador (ex.: Compass): `mongodb://localhost:27017/saude-unificada?directConnection=true`
-- Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com` (senha `123456`); no app, CPF `22916926402` (senha `paciente123`).
+- Usuários de teste (senha `123456`): médicos `medico@teste.com` (clínica médica), `cardio@teste.com` (cardiologia), `pediatra@teste.com`, `gineco@teste.com` e `orto@teste.com`; gestores `gestor@teste.com` e `gestor2@teste.com`.
+- No app (senha `paciente123`): CPFs `22916926402` (Maria), `27952204408` (João), `89313074893` (Sofia, gestante), `52525738080` (Roberto) e `55991928819` (Camila). São 18 pacientes e 34 atendimentos inventados, com receitas e laudos de demonstração.
 
 ## Testes e CI
 
