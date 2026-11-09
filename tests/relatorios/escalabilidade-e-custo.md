@@ -23,6 +23,7 @@
 | 100 mil | ~R$ 600 | R$ 0,006 | ~R$ 300 |
 | **1 milhão** | **~R$ 2.800** (otimizado: ~R$ 1.450) | **R$ 0,003** | **~R$ 140** |
 | 10 milhões | ~R$ 13.000 | R$ 0,0013 | ~R$ 65 |
+| **Brasil inteiro: 1,5 a 2,5 milhões de atendimentos por dia** | **~R$ 30.800 a 46.800** | R$ 0,0006 a 0,0007 **por atendimento** | ~R$ 73 a 80 |
 
 Quanto mais gente usa, **mais barato fica por pessoa**: a parte fixa (load balancer, banco) se divide entre mais usuários.
 
@@ -160,7 +161,87 @@ Os preços são referências públicas da AWS (us-east-1, sob demanda) e do Mong
 
 O código da API não precisa mudar para crescer: só a configuração da infraestrutura em `infra/`, que já é código (AWS CDK).
 
-## 6. Conclusão
+## 6. Cenário Brasil: 1,5 a 2,5 milhões de atendimentos por dia
+
+**Premissa do grupo:** contando quem vai ao pronto-socorro, faz exames ou fica internado, o movimento total nos hospitais brasileiros (rede pública e particular) fica em torno de **1,5 a 2,5 milhões de pessoas por dia**. É uma estimativa trazida pelo grupo, não um dado oficial conferido. Aqui ela vira o pior caso: **todos os hospitais do país usando a plataforma**.
+
+### 6.1 Quantas requisições cada atendimento gera
+
+| O que acontece no atendimento | Requisições |
+|---|---|
+| Médico abre o prontuário | 1 |
+| Médico consulta o histórico do paciente | 1 |
+| Agenda do médico (atualizada entre um paciente e outro) | 1 |
+| Registrar o atendimento (com alergias, remédios, condições) | 1 |
+| Anexar receita ou laudo | 1 |
+| Baixar ou conferir um documento (farmácia, outro hospital) | 1 |
+| Paciente consulta o app depois (carteira e atendimentos) | 2 |
+| **Consultas e gravações** | **8** |
+| Logins: médico (1 a cada 20 pacientes, 0,05) + metade dos pacientes entrando no app (0,5) | 0,55 |
+| **Total por atendimento** | **8,55** |
+
+Os logins são só 6% das requisições, mas pesam mais da metade da CPU, por causa do bcrypt.
+
+### 6.2 Volume e servidores necessários
+
+Premissas: 70% do movimento entre 7h e 19h, e pico (segunda de manhã) com o dobro da média desse horário. Capacidade medida: ~62 req/s por vCPU com o auto scaling em 50% (seção 5.1).
+
+| | **1,5 milhão de atendimentos por dia** | **2,5 milhões de atendimentos por dia** |
+|---|---|---|
+| Requisições por dia | 12,8 milhões | 21,4 milhões |
+| Requisições por mês | 385 milhões | 641 milhões |
+| Média entre 7h e 19h | 208 req/s | 346 req/s |
+| **Pico** | **416 req/s** | **693 req/s** |
+| vCPUs no pico | 6,7 → **7 tarefas de 1 vCPU** | 11,2 → **12 tarefas de 1 vCPU** |
+| vCPUs de madrugada (mínimo para não cair) | 2 | 2 a 3 |
+| Tráfego de saída por mês (respostas de ~5 KB) | ~1,9 TB | ~3,2 TB |
+| Documentos novos por dia (metade dos atendimentos, 300 KB cada) | 750 mil (~6,8 TB/mês) | 1,25 milhão (~11 TB/mês) |
+| Crescimento do banco (atendimento + auditoria, ~2,3 KB por atendimento) | ~3,4 GB/dia (~1,2 TB/ano) | ~5,6 GB/dia (~2 TB/ano) |
+
+**O que muda na infraestrutura:** basta subir o máximo do auto scaling de 3 para ~15 tarefas, com tarefas de 1 vCPU, no `infra/lib/api-stack.ts`. O código da API não muda.
+
+O que muda de verdade é o **banco**. Nessa escala, o MongoDB precisa de um cluster grande ou dividido em partes (*sharding*). O histórico antigo vai para armazenamento mais barato: Online Archive do Atlas, ou S3 Glacier para os documentos.
+
+### 6.3 Custo mensal estimado (US$)
+
+Mesmas referências de preço da seção 5.3 (aproximadas). Os documentos estão calculados no fim do 1º ano. Os arquivos com mais de 90 dias vão para o S3 Glacier Instant Retrieval (US$ 0,004/GB).
+
+| Item | 1,5 milhão/dia | 2,5 milhões/dia | Observação |
+|---|---|---|---|
+| ECS Fargate (API) | 104 | 157 | ~70 a 106 vCPU-hora por dia |
+| Load balancer | 32 | 42 | Inclui as unidades de capacidade (LCU) |
+| IPs públicos | 22 | 29 | |
+| CloudFront (requisições + tráfego) | 926 | 1.632 | US$ 0,022 a cada 10 mil requisições na América do Sul |
+| **MongoDB Atlas** | **~3.200** | **~4.500** | M60 ou cluster dividido, com backup. **É a estimativa mais incerta** |
+| **S3 (documentos)** | **~1.000** | **~1.670** | Armazenamento + downloads + envios. Cresce a cada mês |
+| CloudWatch | 25 | 35 | |
+| Redis (limite de login entre tarefas) | 47 | 47 | 2 nós pequenos |
+| WAF (firewall contra ataques) | 240 | 395 | Recomendado em escala nacional |
+| **Total por mês** | **~US$ 5.600 (R$ 30.800)** | **~US$ 8.500 (R$ 46.800)** | |
+| Otimizado: API direto no load balancer, com domínio próprio, sem CloudFront | ~US$ 4.840 (R$ 26.600) | ~US$ 7.160 (R$ 39.400) | Sem a taxa por requisição do CloudFront |
+| **Por ano** | **~R$ 370 mil** | **~R$ 560 mil** | |
+
+### 6.4 Quanto custa cada atendimento
+
+| | 1,5 milhão/dia | 2,5 milhões/dia |
+|---|---|---|
+| Atendimentos por mês | 45 milhões | 75 milhões |
+| **Custo por atendimento** | **R$ 0,0007** (menos de 1 décimo de centavo) | **R$ 0,0006** |
+| Custo por 1 milhão de requisições | ~R$ 80 | ~R$ 73 |
+| Custo por brasileiro por mês (~203 milhões de habitantes) | R$ 0,00015 | R$ 0,00023 |
+
+### 6.5 Leitura
+
+- **A API não é o problema.** Os servidores da API são só ~2% do custo: 7 a 12 tarefas de 1 vCPU no pico dão conta do país inteiro. O auto scaling medido na seção 3 é o mesmo mecanismo, só com o máximo maior.
+- **O custo está nos dados.** O banco é ~53% a 57% do total, e os documentos, cerca de 20%. A conta cresce todo mês, porque prontuário e auditoria não podem ser apagados. A LGPD e as regras do CFM pedem a guarda do prontuário por muitos anos. A política de arquivamento (dados antigos em armazenamento barato) é o que mantém o custo sob controle.
+- **Ordem de grandeza:** mesmo no pior caso, com todos os hospitais do Brasil, fica em torno de **R$ 30 a 47 mil por mês**, menos de 1 décimo de centavo por atendimento.
+- **Limites desta estimativa:**
+  - as premissas de uso (requisições por atendimento, horário de pico, tamanho dos arquivos) são do grupo, não medidas em hospital real;
+  - a capacidade por vCPU foi extrapolada da medição local;
+  - o preço do Atlas em escala depende de negociação;
+  - não entram a equipe, o suporte e a integração com os sistemas dos hospitais.
+
+## 7. Conclusão
 
 - O **auto scaling e o load balancer funcionam**:
   - a API sobe e desce sozinha conforme a carga;
@@ -168,3 +249,4 @@ O código da API não precisa mudar para crescer: só a configuração da infrae
   - depois da correção do keep-alive, os erros foram zero.
 - **O ponto de melhoria** é a distribuição desigual da carga entre as tarefas. Ela tem solução simples (seção 4) e ainda precisa ser testada.
 - **Para 1 milhão de pacientes, a estimativa é de ~R$ 2.800 por mês** (~R$ 1.450 com as otimizações): menos de **R$ 0,003 por paciente por mês**, ou **~R$ 140 por milhão de requisições**. O maior custo é o banco de dados, não os servidores da API.
+- **No cenário Brasil inteiro (1,5 a 2,5 milhões de atendimentos por dia), a estimativa é de R$ 30 a 47 mil por mês**, menos de R$ 0,001 por atendimento (seção 6).
