@@ -1,0 +1,99 @@
+{
+    "ScalingActivities": [
+        {
+            "ActivityId": "1d1b8f5d-d4d1-4814-8183-7dcb123eec11",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 1.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmLow-d0f6979f-fa3f-4236-ad18-29450767cbe3 in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-06T00:24:16.596000-03:00",
+            "StatusCode": "InProgress",
+            "StatusMessage": "Successfully set desired count to 1. Waiting for change to be fulfilled by ecs."
+        },
+        {
+            "ActivityId": "dde428a1-a214-4dbd-a6b6-f6cf80a9efb7",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 2.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmLow-d0f6979f-fa3f-4236-ad18-29450767cbe3 in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-06T00:21:16.638000-03:00",
+            "EndTime": "2026-11-06T00:21:51.654000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 2. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "15c95edc-f684-4283-97cc-212509b5123f",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 3.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmHigh-ccd14dd4-37b2-47b8-a934-750755ccabce in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:57:18.838000-03:00",
+            "EndTime": "2026-11-05T23:58:21.993000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 3. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "8afc5d9b-925c-4907-a1a8-0a7352dd4249",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 2.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmHigh-ccd14dd4-37b2-47b8-a934-750755ccabce in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:51:18.858000-03:00",
+            "EndTime": "2026-11-05T23:52:24.024000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 2. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "7cd7ef25-4ee3-4d0c-9156-90558e0753b9",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 1.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmLow-d0f6979f-fa3f-4236-ad18-29450767cbe3 in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:34:16.590000-03:00",
+            "EndTime": "2026-11-05T23:34:52.614000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 1. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "a1c2eead-4acf-4c12-98b0-85f0cc845cc1",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 2.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmLow-d0f6979f-fa3f-4236-ad18-29450767cbe3 in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:31:16.618000-03:00",
+            "EndTime": "2026-11-05T23:31:51.674000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 2. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "c3df322a-b84d-4139-87e2-89eb7c96e8a3",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 3.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmHigh-ccd14dd4-37b2-47b8-a934-750755ccabce in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:10:18.839000-03:00",
+            "EndTime": "2026-11-05T23:11:23.070000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 3. Change successfully fulfilled by ecs."
+        },
+        {
+            "ActivityId": "8453f561-356e-4b3e-bb8c-389b36301b0b",
+            "ServiceNamespace": "ecs",
+            "ResourceId": "service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ",
+            "ScalableDimension": "ecs:service:DesiredCount",
+            "Description": "Setting desired count to 2.",
+            "Cause": "monitor alarm TargetTracking-service/SaudeUnificadaApi-ClusterEB0386A7-Obrovj6CAwwh/SaudeUnificadaApi-ServiceD69D759B-0OBwXONiXkZQ-AlarmHigh-ccd14dd4-37b2-47b8-a934-750755ccabce in state ALARM triggered policy SaudeUnificadaApiServiceTaskCountTargetCpu7B50FF05",
+            "StartTime": "2026-11-05T23:04:18.868000-03:00",
+            "EndTime": "2026-11-05T23:05:25.044000-03:00",
+            "StatusCode": "Successful",
+            "StatusMessage": "Successfully set desired count to 2. Change successfully fulfilled by ecs."
+        }
+    ]
+}

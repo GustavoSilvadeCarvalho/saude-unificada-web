@@ -1,0 +1,43 @@
+{
+  "data": "2026-11-09",
+  "ambiente": "Local: AMD Ryzen 5 5600GT, 1 processo Node 24 (npm run dev:memory), MongoDB em memória",
+  "usuariosSimultaneos": 10,
+  "duracaoPorCenarioSeg": 25,
+  "comparacao": {
+    "POST /auth/login (bcrypt), de carga-local-2026-11-05.json": {
+      "porSegundo": 16.9,
+      "p50": 599,
+      "p95": 664
+    }
+  },
+  "cenarios": {
+    "GET /patients/:cpf (prontuário, médico)": {
+      "requisicoes": 14979,
+      "porSegundo": 599.2,
+      "p50": 16,
+      "p95": 23,
+      "erros": 0
+    },
+    "GET /appointments?doctorId (agenda)": {
+      "requisicoes": 27893,
+      "porSegundo": 1115.7,
+      "p50": 9,
+      "p95": 13,
+      "erros": 0
+    },
+    "GET /me/record (carteira, app)": {
+      "requisicoes": 21338,
+      "porSegundo": 853.5,
+      "p50": 11,
+      "p95": 16,
+      "erros": 0
+    },
+    "GET /me/appointments (app)": {
+      "requisicoes": 37775,
+      "porSegundo": 1511,
+      "p50": 6,
+      "p95": 9,
+      "erros": 0
+    }
+  }
+}
