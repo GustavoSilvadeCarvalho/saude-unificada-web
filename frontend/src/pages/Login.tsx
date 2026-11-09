@@ -12,6 +12,19 @@ const TEST_USERS = [
   { label: 'Gestor', email: 'gestor@teste.com', password: '123456' },
 ]
 
+/** Só existem no seed da API (backend/src/database/seed-demo.ts), não nos mocks */
+const API_TEST_USERS = [
+  { label: 'Cardiologia', email: 'cardio@teste.com', password: '123456' },
+  { label: 'Pediatria', email: 'pediatra@teste.com', password: '123456' },
+  { label: 'Ginecologia', email: 'gineco@teste.com', password: '123456' },
+  { label: 'Ortopedia', email: 'orto@teste.com', password: '123456' },
+]
+
+// Mostra os usuários de teste com os mocks, no desenvolvimento e na demonstração publicada
+// (VITE_SHOW_TEST_USERS=true na Vercel). Num sistema de verdade isso ficaria desligado.
+const SHOW_TEST_USERS = USE_MOCK || import.meta.env.DEV || import.meta.env.VITE_SHOW_TEST_USERS === 'true'
+const testUsers = USE_MOCK ? TEST_USERS : [...TEST_USERS, ...API_TEST_USERS]
+
 export default function Login() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
@@ -86,13 +99,13 @@ export default function Login() {
             </p>
           </div>
 
-          {USE_MOCK && (
+          {SHOW_TEST_USERS && (
             <section aria-labelledby="test-users-title" className="mt-6 rounded-xl border border-dashed border-brand-200 bg-white/70 p-5">
               <h2 id="test-users-title" className="text-sm font-semibold text-slate-800">
-                Usuários de teste (modo demonstração)
+                Usuários de teste ({USE_MOCK ? 'modo demonstração' : 'dados inventados da API'})
               </h2>
               <ul className="mt-3 space-y-2">
-                {TEST_USERS.map((u) => (
+                {testUsers.map((u) => (
                   <li key={u.email} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span>
                       <strong className="text-slate-800">{u.label}:</strong>{' '}
