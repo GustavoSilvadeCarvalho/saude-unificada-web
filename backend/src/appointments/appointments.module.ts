@@ -3,11 +3,13 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AuditModule } from '../audit/audit.module.js'
 import { TransactionRunner } from '../database/transaction.runner.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
+import { UsersModule } from '../users/users.module.js'
 import { Appointment, AppointmentSchema } from './appointment.schema.js'
 import { AppointmentsController } from './appointments.controller.js'
 import { AppointmentsService } from './appointments.service.js'
 import { DocumentsController } from './documents.controller.js'
 import { DocumentsService } from './documents.service.js'
+import { VerificationController } from './verification.controller.js'
 
 @Module({
   imports: [
@@ -17,8 +19,9 @@ import { DocumentsService } from './documents.service.js'
       { name: Patient.name, schema: PatientSchema },
     ]),
     AuditModule,
+    UsersModule,
   ],
-  controllers: [AppointmentsController, DocumentsController],
+  controllers: [AppointmentsController, DocumentsController, VerificationController],
   providers: [AppointmentsService, DocumentsService, TransactionRunner],
   // O app do paciente (MeModule) reaproveita o download e a leitura dos atendimentos
   exports: [DocumentsService, MongooseModule],

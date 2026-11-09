@@ -5,6 +5,8 @@ import { AuditService } from '../audit/audit.service.js'
 import type { AuthUser } from '../common/roles.js'
 import { cleanFileName, detectFileType } from '../common/uploads.js'
 import { dateOnlyInBrasilia } from '../common/validators.js'
+import { initials, newVerificationCode, normalizeVerificationCode, sha256 } from '../common/verification.js'
+import { UsersService } from '../users/users.service.js'
 import { TransactionRunner } from '../database/transaction.runner.js'
 import { Patient } from '../patients/patient.schema.js'
 import { StorageService } from '../storage/storage.service.js'
@@ -16,6 +18,7 @@ export const MAX_DOCUMENTS = 20
 
 const APPOINTMENT_NOT_FOUND = 'Atendimento não encontrado.'
 const DOCUMENT_NOT_FOUND = 'Documento não encontrado.'
+const NOT_VERIFIED = 'Nenhum documento com esse código. Confira o código impresso no documento.'
 
 /** Laudos e exames anexados também aparecem na seção de exames do prontuário */
 const EXAM_NAMES: Partial<Record<DocumentType, string>> = {
@@ -33,6 +36,7 @@ export class DocumentsService {
     private readonly storage: StorageService,
     private readonly auditService: AuditService,
     private readonly transactions: TransactionRunner,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -71,6 +75,8 @@ export class DocumentsService {
           storageKey,
           mimeType: detected.mimeType,
           size: file.size,
+          verificationCode: newVerificationCode(),
+          sha256: sha256(file.buffer),
         })
         await current.save({ session })
 
@@ -130,6 +136,31 @@ export class DocumentsService {
       mimeType: document.mimeType,
       apiBaseUrl,
     })
+  }
+
+  /**
+   * Conferência pública (sem login): quem recebe a receita ou o laudo (farmácia, outro hospital)
+   * digita o código impresso e vê quem emitiu e quando. Não mostra CPF nem nome completo.
+   */
+  async verify(code: string) {
+    const normalized = normalizeVerificationCode(code)
+    if (!normalized) throw new NotFoundException(NOT_VERIFIED)
+    const appointment = await this.appointmentModel.findOne({ 'documents.verificationCode': normalized }).exec()
+    const document = appointment?.documents.find((d) => d.verificationCode === normalized)
+    if (!appointment || !document) throw new NotFoundException(NOT_VERIFIED)
+
+    const doctor = await this.usersService.findById(String(appointment.doctorId))
+    return {
+      valid: true,
+      verificationCode: normalized,
+      type: document.type,
+      fileName: document.fileName,
+      issuedAt: document.uploadedAt.toISOString(),
+      doctorName: appointment.doctorName,
+      doctorCrm: doctor?.crm,
+      patientInitials: initials(appointment.patientName),
+      sha256: document.sha256 as string,
+    }
   }
 
   private async findAppointment(id: string): Promise<AppointmentDocument> {

@@ -33,6 +33,14 @@ export class AttachedDocument {
   /** Tamanho em bytes */
   @Prop({ required: true })
   size: number
+
+  /** Código impresso no documento para conferir a autenticidade (rota pública /verify/:code) */
+  @Prop()
+  verificationCode?: string
+
+  /** SHA-256 do arquivo: prova que o arquivo conferido é exatamente o que foi enviado */
+  @Prop()
+  sha256?: string
 }
 export const AttachedDocumentSchema = SchemaFactory.createForClass(AttachedDocument)
 
@@ -81,3 +89,5 @@ export const AppointmentSchema = SchemaFactory.createForClass(Appointment)
 // Agenda do médico (data crescente) e histórico do paciente (data decrescente)
 AppointmentSchema.index({ doctorId: 1, date: 1 })
 AppointmentSchema.index({ patientCpf: 1, date: -1 })
+// Conferência pública de receitas e laudos pelo código
+AppointmentSchema.index({ 'documents.verificationCode': 1 }, { unique: true, sparse: true })

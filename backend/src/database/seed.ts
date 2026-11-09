@@ -7,6 +7,7 @@ import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema.js'
 import { loadEnvFile } from '../common/env.js'
 import { REGIONS } from '../common/regions.js'
 import { todayDateOnly } from '../common/validators.js'
+import { newVerificationCode, sha256 } from '../common/verification.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
 import { Region, RegionSchema } from '../regions/region.schema.js'
 import { RegionalStat, RegionalStatSchema } from '../regions/regional-stat.schema.js'
@@ -56,11 +57,13 @@ async function seedDocuments(
     (appointment.documents ?? []).map(async (doc) => {
       const id = new Types.ObjectId()
       const storageKey = `appointments/${appointmentId}/${id}.pdf`
+      const verificationCode = newVerificationCode()
       const body = demoPdf(`Saúde Unificada — ${doc.type.toUpperCase()}`, [
         `Paciente: ${info.patientName}`,
         `Profissional: ${info.doctorName}`,
         `Atendimento: ${appointment.reason}`,
         `Arquivo: ${doc.fileName}`,
+        `Código de verificação: ${verificationCode}`,
         '',
         'Documento fictício gerado pelo seed, apenas para demonstração.',
       ])
@@ -73,6 +76,8 @@ async function seedDocuments(
         storageKey,
         mimeType: 'application/pdf',
         size: body.length,
+        verificationCode,
+        sha256: sha256(body),
       }
     }),
   )

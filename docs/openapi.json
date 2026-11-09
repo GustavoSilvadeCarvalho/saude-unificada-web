@@ -1099,6 +1099,53 @@
         ]
       }
     },
+    "/api/verify/{code}": {
+      "get": {
+        "description": "Para a farmácia ou outro serviço de saúde: digite o código impresso no documento. Aceita minúsculas e sem traços. Mostra quem emitiu, quando e o SHA-256 do arquivo, mas só as iniciais do paciente (sem CPF nem nome completo).",
+        "operationId": "VerificationController_verify",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "K7QM-3XRA-9DPE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedDocumentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Código inexistente ou mal digitado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Nenhum documento com esse código. Confira o código impresso no documento."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confere se uma receita, laudo ou exame é autêntico (sem login)",
+        "tags": [
+          "Verificação de documentos"
+        ]
+      }
+    },
     "/api/me/record": {
       "get": {
         "description": "O prontuário do próprio paciente (mesmo formato de GET /patients/:cpf). Somente leitura.",
@@ -2164,6 +2211,16 @@
           "uploadedAt": {
             "type": "string",
             "example": "2026-10-01T14:41:00.000Z"
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "K7QM-3XRA-9DPE",
+            "description": "Código para conferir a autenticidade em GET /verify/{code} (ex.: na farmácia)"
+          },
+          "sha256": {
+            "type": "string",
+            "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "description": "SHA-256 do arquivo enviado"
           }
         },
         "required": [
@@ -2429,6 +2486,66 @@
         "required": [
           "url",
           "expiresAt"
+        ]
+      },
+      "VerifiedDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "example": true
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "K7QM-3XRA-9DPE"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "laudo",
+              "exame",
+              "outro"
+            ],
+            "example": "receita"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "receita_amoxicilina.pdf"
+          },
+          "issuedAt": {
+            "type": "string",
+            "example": "2026-10-01T14:41:00.000Z",
+            "description": "Quando o documento foi emitido"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "doctorCrm": {
+            "type": "string",
+            "example": "CRM-SP 123456"
+          },
+          "patientInitials": {
+            "type": "string",
+            "example": "M. A. S.",
+            "description": "Só as iniciais do paciente (LGPD)"
+          },
+          "sha256": {
+            "type": "string",
+            "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "description": "Compare com o SHA-256 do arquivo recebido para ter certeza de que não foi alterado"
+          }
+        },
+        "required": [
+          "valid",
+          "verificationCode",
+          "type",
+          "fileName",
+          "issuedAt",
+          "doctorName",
+          "patientInitials",
+          "sha256"
         ]
       },
       "AccessLogEntryResponse": {

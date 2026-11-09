@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { MAX_UPLOAD_BYTES } from '../src/common/uploads.js'
 import { demoPdf } from '../src/database/demo-pdf.js'
 import { SEED_CPFS } from '../src/database/seed-data.js'
@@ -66,6 +67,15 @@ describe('Documentos (receitas, laudos, exames)', () => {
       expect(typeof res.body.id).toBe('string')
       expect(new Date(res.body.uploadedAt).toISOString()).toBe(res.body.uploadedAt)
       expect(res.body).not.toHaveProperty('storageKey')
+    })
+
+    it('gera um código de verificação único e o SHA-256 do arquivo', async () => {
+      const first = await upload(rafael.token, appointmentId, PDF, 'receita_1.pdf')
+      const second = await upload(rafael.token, appointmentId, PDF, 'receita_2.pdf')
+
+      expect(first.body.verificationCode).toMatch(/^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/)
+      expect(second.body.verificationCode).not.toBe(first.body.verificationCode)
+      expect(first.body.sha256).toBe(createHash('sha256').update(PDF).digest('hex'))
     })
 
     it('o arquivo baixado é igual ao enviado', async () => {
@@ -219,6 +229,47 @@ describe('Documentos (receitas, laudos, exames)', () => {
 
       expect((await ctx.api().get(path)).status).toBe(401)
       expect((await ctx.api().get(path).set(auth(gestor))).status).toBe(403)
+    })
+  })
+
+  describe('GET /api/verify/:code (público)', () => {
+    let code: string
+
+    beforeAll(async () => {
+      code = (await upload(rafael.token, appointmentId, PDF, 'receita_verificar.pdf')).body.verificationCode
+    })
+
+    it('confere o documento sem login, mostrando só as iniciais do paciente', async () => {
+      const res = await ctx.api().get(`/api/verify/${code}`)
+
+      expect(res.status).toBe(200)
+      expect(res.body).toMatchObject({
+        valid: true,
+        verificationCode: code,
+        type: 'receita',
+        fileName: 'receita_verificar.pdf',
+        doctorName: 'Dr. Rafael Moreira Lima',
+        doctorCrm: 'CRM-SP 123456',
+        patientInitials: 'J. P. O. S.',
+        sha256: createHash('sha256').update(PDF).digest('hex'),
+      })
+      expect(JSON.stringify(res.body)).not.toContain(SEED_CPFS.joao)
+    })
+
+    it('aceita o código digitado em minúsculas, sem traços e com O no lugar de 0', async () => {
+      const typed = code.toLowerCase().replace(/-/g, '').replace(/0/g, 'o')
+
+      const res = await ctx.api().get(`/api/verify/${typed}`)
+
+      expect(res.status).toBe(200)
+      expect(res.body.verificationCode).toBe(code)
+    })
+
+    it.each(['ZZZZ-ZZZZ-ZZZZ', 'curto', '$where'])('responde 404 para %s', async (bad) => {
+      const res = await ctx.api().get(`/api/verify/${encodeURIComponent(bad)}`)
+
+      expect(res.status).toBe(404)
+      expect(res.body.message).toBe('Nenhum documento com esse código. Confira o código impresso no documento.')
     })
   })
 })

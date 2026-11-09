@@ -16,6 +16,7 @@ const PUBLIC_ROUTES = [
   'POST /api/auth/patient-register',
   'GET /api/health',
   'GET /api/health/live',
+  'GET /api/verify/{code}',
 ]
 
 type Operation = {
@@ -60,6 +61,7 @@ describe('Documentação Swagger', () => {
         'GET /api/auth/me',
         'GET /api/health',
         'GET /api/health/live',
+  'GET /api/verify/{code}',
         'GET /api/patients/{cpf}',
         'POST /api/patients',
         'GET /api/appointments',
