@@ -221,6 +221,15 @@ function mockCreateAppointment(input: CreateAppointmentInput, uploads: DocumentU
   return mockResponse(appointment)
 }
 
+/**
+ * Link temporário (5 min) para abrir o documento. Na API real o arquivo vem do S3
+ * (ou do disco, no desenvolvimento); no mock não existem arquivos de verdade.
+ */
+export async function getDocumentLink(appointmentId: string, documentId: string): Promise<{ url: string; expiresAt: string }> {
+  if (USE_MOCK) return mockError(404, 'No modo de demonstração (mock) os arquivos não existem. Use a API para abrir documentos.')
+  return request(`/appointments/${appointmentId}/documents/${documentId}/download`)
+}
+
 /* ---------- Pacientes ---------- */
 
 /** Resumo dos atendimentos realizados, montado a partir da lista de atendimentos (mock) */

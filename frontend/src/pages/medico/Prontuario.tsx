@@ -1,13 +1,14 @@
+import { useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/DashboardLayout'
 import { Alert } from '../../components/ui/Alert'
 import { Badge } from '../../components/ui/Badge'
-import { ButtonLink } from '../../components/ui/Button'
+import { Button, ButtonLink } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { Icon } from '../../components/ui/Icon'
 import { Loading } from '../../components/ui/Spinner'
 import { useApi } from '../../hooks/useApi'
-import { getAppointmentsByPatient, getPatientByCpf } from '../../services/api'
+import { ApiError, getAppointmentsByPatient, getDocumentLink, getPatientByCpf } from '../../services/api'
 import type { AllergySeverity, ConditionStatus } from '../../types'
 import { maskCpf } from '../../utils/cpf'
 import { calculateAge, formatDate, formatDateTime } from '../../utils/format'
@@ -34,6 +35,26 @@ export default function Prontuario() {
   const { cpf = '' } = useParams()
   const location = useLocation()
   const successMessage = (location.state as { message?: string } | null)?.message
+  const [opening, setOpening] = useState<string | null>(null)
+  const [documentError, setDocumentError] = useState('')
+
+  /** Pede o link temporário e abre o arquivo numa aba nova */
+  async function openDocument(appointmentId: string, documentId: string) {
+    setDocumentError('')
+    setOpening(documentId)
+    // Abre a aba antes do await: depois dele o navegador pode bloquear como pop-up
+    const tab = window.open('', '_blank')
+    try {
+      const { url } = await getDocumentLink(appointmentId, documentId)
+      if (tab) tab.location.href = url
+      else window.location.href = url
+    } catch (err) {
+      tab?.close()
+      setDocumentError(err instanceof ApiError ? err.message : 'Não foi possível abrir o documento.')
+    } finally {
+      setOpening(null)
+    }
+  }
 
   const { data, loading, error } = useApi(
     () => Promise.all([getPatientByCpf(cpf), getAppointmentsByPatient(cpf)]),
@@ -62,7 +83,9 @@ export default function Prontuario() {
   }
 
   const upcoming = appointments.filter((a) => a.status === 'agendado')
-  const documents = appointments.flatMap((a) => a.documents.map((d) => ({ ...d, appointmentDate: a.date })))
+  const documents = appointments.flatMap((a) =>
+    a.documents.map((d) => ({ ...d, appointmentId: a.id, appointmentDate: a.date })),
+  )
   const hasSevereAllergy = patient.allergies.some((a) => a.severity === 'grave')
 
   return (
@@ -225,6 +248,13 @@ export default function Prontuario() {
             <div className="mb-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
               <strong>Agendado:</strong>{' '}
               {upcoming.map((a) => `${formatDateTime(a.date)} com ${a.doctorName}`).join('; ')}
+              {upcoming
+                .filter((a) => a.instructions)
+                .map((a) => (
+                  <p key={a.id} className="mt-1 text-brand-800">
+                    <strong>Orientações ({formatDateTime(a.date)}):</strong> {a.instructions}
+                  </p>
+                ))}
             </div>
           )}
           {patient.appointmentSummaries.length === 0 ? (
@@ -246,19 +276,39 @@ export default function Prontuario() {
         </Card>
 
         <Card title="Documentos anexados" icon={<Icon name="upload" className="h-5 w-5 text-brand-700" />} className="lg:col-span-2">
+          {documentError && (
+            <div className="mb-3">
+              <Alert tone="error">{documentError}</Alert>
+            </div>
+          )}
           {documents.length === 0 ? (
             <EmptyText>Nenhum documento anexado.</EmptyText>
           ) : (
             <ul className="divide-y divide-slate-100">
               {documents.map((d) => (
                 <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                  <span className="flex items-center gap-2 text-sm font-medium text-slate-900">
-                    <Icon name="file" className="h-4 w-4 text-slate-500" />
-                    {d.fileName}
+                  <span className="flex flex-col">
+                    <span className="flex items-center gap-2 text-sm font-medium text-slate-900">
+                      <Icon name="file" className="h-4 w-4 text-slate-500" />
+                      {d.fileName}
+                    </span>
+                    {d.verificationCode && (
+                      <span className="ml-6 text-xs text-slate-500">
+                        Código de verificação: <span className="font-mono font-semibold text-slate-700">{d.verificationCode}</span>
+                      </span>
+                    )}
                   </span>
                   <span className="flex items-center gap-2 text-xs text-slate-500">
                     <Badge tone="brand">{d.type}</Badge>
                     enviado em {formatDateTime(d.uploadedAt)}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={opening === d.id}
+                      onClick={() => openDocument(d.appointmentId, d.id)}
+                    >
+                      <Icon name="download" className="h-4 w-4" /> Abrir
+                    </Button>
                   </span>
                 </li>
               ))}
