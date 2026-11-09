@@ -348,7 +348,7 @@ Os indicadores e gráficos (totais, média mensal, ranking de condições, evolu
 
 ## 5. Paciente (app)
 
-O paciente entra **pelo CPF**, como no app do gov.br. O token dele só abre as rotas desta seção (`403` nas outras), e tudo é **somente leitura**: quem atualiza o prontuário é o profissional, no atendimento.
+O paciente entra **pelo CPF**, como no app do gov.br. O token dele só abre as rotas desta seção (`403` nas outras), e o prontuário é **somente leitura**: quem atualiza é o profissional, no atendimento. O que o paciente controla é **quem pode acessar** (bloqueio de médicos, abaixo).
 
 ### `POST /auth/patient-login` (público)
 
@@ -380,6 +380,24 @@ Erro: `401` "CPF ou senha inválidos." (mesma mensagem para CPF sem conta e senh
 | `GET /me/exams` | Exames e resultados | `ExamReport[]`, mais recente primeiro |
 | `GET /me/access-log` | Quem acessou meus dados (LGPD) | `[{ at, description, userName, userRole, action }]` |
 | `GET /me/appointments/:id/documents/:documentId/download` | Baixar receita/laudo | `{ url, expiresAt }` (link de 5 min, sem token) |
+| `GET /me/doctors` | Privacidade: quem pode ver meus dados | `LinkedDoctor[]`, por nome |
+| `PUT /me/blocked-doctors/:doctorId` | Bloquear um médico | `LinkedDoctor` com `blocked: true` |
+| `DELETE /me/blocked-doctors/:doctorId` | Liberar de novo | `LinkedDoctor` com `blocked: false` |
+
+#### Controle de privacidade (bloqueio de médicos)
+
+`GET /me/doctors` lista os médicos ligados ao paciente: quem atendeu (ou vai atender), quem abriu o prontuário e quem foi bloqueado.
+
+```json
+[
+  { "doctorId": "u-medico-1", "name": "Dr. Rafael Moreira Lima", "specialty": "Clínica Médica", "crm": "CRM-SP 123456", "blocked": true, "blockedAt": "2026-11-09T14:00:00.000Z" },
+  { "doctorId": "u-medico-2", "name": "Dra. Camila Rocha", "specialty": "Cardiologia", "crm": "CRM-SP 234567", "blocked": false }
+]
+```
+
+- Médico bloqueado recebe `403` "O paciente bloqueou o seu acesso a este prontuário." ao abrir o prontuário (`GET /patients/:cpf`), o histórico (`GET /appointments?patientCpf=`), anexar ou baixar documentos e registrar atendimento. A agenda dele (`?doctorId=`) continua normal.
+- Os outros médicos não são afetados. O acesso negado não entra na auditoria como acesso.
+- `PUT` repetido não dá erro. Id que não é de médico: `404` "Médico não encontrado.".
 
 Exemplo de `GET /me/access-log`:
 

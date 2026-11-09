@@ -164,6 +164,17 @@ export interface DocumentUpload {
   type: DocumentType
 }
 
+/** Médico ligado ao paciente, na tela de privacidade do app (GET /me/doctors) */
+export interface LinkedDoctor {
+  doctorId: string
+  name: string
+  specialty?: string
+  crm?: string
+  /** true: o médico não consegue abrir o prontuário */
+  blocked: boolean
+  blockedAt?: string
+}
+
 /* ---------- Dados regionais (gestor) ---------- */
 
 export interface ConditionCount {
