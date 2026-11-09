@@ -244,6 +244,8 @@ export interface SeedAppointment {
   status: 'realizado' | 'agendado'
   reason: string
   summary: string
+  /** Orientações de preparo (só nos agendados) */
+  instructions?: string
   /** Documentos anexados (o seed grava um PDF de demonstração para cada um) */
   documents?: { fileName: string; type: 'receita' | 'laudo' | 'exame' | 'outro'; minutesAfter: number }[]
 }
@@ -253,11 +255,11 @@ const CAMILA = 'cardio@teste.com'
 
 export const seedAppointments: SeedAppointment[] = [
   // Próximos atendimentos
-  { patient: 'maria', doctorEmail: RAFAEL, daysFromNow: 1, hour: 9, status: 'agendado', reason: 'Retorno — controle glicêmico', summary: '' },
-  { patient: 'ana', doctorEmail: RAFAEL, daysFromNow: 1, hour: 10, minute: 30, status: 'agendado', reason: 'Reavaliação de anemia', summary: '' },
+  { patient: 'maria', doctorEmail: RAFAEL, daysFromNow: 1, hour: 9, status: 'agendado', reason: 'Retorno — controle glicêmico', summary: '', instructions: 'Jejum de 8 horas para a glicemia. Trazer o resultado da HbA1c e o caderno de medições de glicose.' },
+  { patient: 'ana', doctorEmail: RAFAEL, daysFromNow: 1, hour: 10, minute: 30, status: 'agendado', reason: 'Reavaliação de anemia', summary: '', instructions: 'Fazer o hemograma e a ferritina até 2 dias antes. Não precisa de jejum.' },
   { patient: 'pedro', doctorEmail: RAFAEL, daysFromNow: 3, hour: 14, status: 'agendado', reason: 'Acompanhamento — ansiedade', summary: '' },
-  { patient: 'joao', doctorEmail: RAFAEL, daysFromNow: 6, hour: 8, minute: 30, status: 'agendado', reason: 'Check-up anual', summary: '' },
-  { patient: 'carlos', doctorEmail: CAMILA, daysFromNow: 2, hour: 15, status: 'agendado', reason: 'Retorno cardiológico', summary: '' },
+  { patient: 'joao', doctorEmail: RAFAEL, daysFromNow: 6, hour: 8, minute: 30, status: 'agendado', reason: 'Check-up anual', summary: '', instructions: 'Jejum de 12 horas (pode beber água). Trazer a carteira de vacinação.' },
+  { patient: 'carlos', doctorEmail: CAMILA, daysFromNow: 2, hour: 15, status: 'agendado', reason: 'Retorno cardiológico', summary: '', instructions: 'Não suspender os remédios do coração. Vir com roupa confortável: pode haver eletrocardiograma.' },
 
   // Atendimentos passados
   {

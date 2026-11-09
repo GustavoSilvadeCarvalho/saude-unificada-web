@@ -143,6 +143,7 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
         status: a.status,
         reason: a.reason,
         summary: a.summary,
+        instructions: a.instructions,
         documents,
       }
     }),

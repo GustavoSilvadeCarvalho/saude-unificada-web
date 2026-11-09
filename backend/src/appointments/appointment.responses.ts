@@ -45,6 +45,12 @@ export class AppointmentResponse {
   @ApiProperty({ example: 'Paciente estável, glicemia em melhora. Mantida conduta.' })
   summary: string
 
+  @ApiPropertyOptional({
+    example: 'Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.',
+    description: 'Orientações para o paciente antes do atendimento (aparece no app)',
+  })
+  instructions?: string
+
   @ApiProperty({ type: [AttachedDocumentResponse] })
   documents: AttachedDocumentResponse[]
 }

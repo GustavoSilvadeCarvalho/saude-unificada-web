@@ -67,6 +67,10 @@ export class Appointment {
   @Prop({ type: String, default: '' })
   summary: string
 
+  /** Orientações para o paciente antes do atendimento (jejum, preparo, o que levar) */
+  @Prop({ trim: true })
+  instructions?: string
+
   @Prop({ type: [AttachedDocumentSchema], default: [] })
   documents: AttachedDocument[]
 }

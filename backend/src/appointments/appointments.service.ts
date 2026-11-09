@@ -70,6 +70,7 @@ export class AppointmentsService {
           status: dto.status,
           reason: dto.reason ?? appointment.reason,
           summary: dto.summary,
+          instructions: dto.instructions ?? appointment.instructions,
         })
         await appointment.save({ session })
       } else {
@@ -84,6 +85,7 @@ export class AppointmentsService {
               status: dto.status,
               reason: dto.reason,
               summary: dto.summary,
+              instructions: dto.instructions,
             },
           ],
           { session },

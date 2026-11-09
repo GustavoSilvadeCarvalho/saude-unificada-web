@@ -2216,6 +2216,11 @@
             "type": "string",
             "example": "Paciente estável, glicemia em melhora. Mantida conduta."
           },
+          "instructions": {
+            "type": "string",
+            "example": "Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.",
+            "description": "Orientações para o paciente antes do atendimento (aparece no app)"
+          },
           "documents": {
             "type": "array",
             "items": {
@@ -2371,6 +2376,11 @@
             "type": "string",
             "example": "Paciente estável, glicemia em melhora. Mantida conduta.",
             "description": "Obrigatório (mínimo de 10 caracteres) quando realizado; pode ser vazio no agendamento"
+          },
+          "instructions": {
+            "type": "string",
+            "example": "Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.",
+            "description": "Orientações para o paciente antes do atendimento: jejum, preparo, o que levar"
           },
           "newAllergies": {
             "description": "Adicionadas às alergias do paciente",

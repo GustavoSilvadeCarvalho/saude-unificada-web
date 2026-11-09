@@ -3,7 +3,7 @@ import { createTestApp, type TestContext } from './helpers.js'
 
 const masked = (cpf: string) => cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
 
-type Appointment = { id: string; patientCpf: string; status: string; date: string; documents: { id: string }[] }
+type Appointment = { id: string; patientCpf: string; status: string; date: string; documents: { id: string }[]; instructions?: string }
 
 describe('App do paciente (login por CPF, estilo gov.br)', () => {
   let ctx: TestContext
@@ -144,6 +144,7 @@ describe('App do paciente (login por CPF, estilo gov.br)', () => {
       expect(next.every((a) => a.status === 'agendado')).toBe(true)
       expect(past.every((a) => a.status === 'realizado')).toBe(true)
       expect(past[0].documents.length).toBeGreaterThan(0)
+      expect(next[0].instructions).toContain('Jejum de 8 horas')
     })
 
     it('GET /me/appointments recusa situação inválida', async () => {
