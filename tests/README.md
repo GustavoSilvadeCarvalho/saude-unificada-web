@@ -18,13 +18,18 @@ O código dos testes automatizados fica junto do código testado:
 tests/
 ├─ README.md                          este arquivo
 ├─ plano-de-testes.md                 estratégia, escopo, critérios de aceite e rastreabilidade (requisito → teste)
+├─ casos-de-teste.md                  51 casos de teste em tabela (entrada, esperado, obtido, situação)
 ├─ seguranca/casos-de-seguranca.md    casos de segurança (OWASP Top 10) e onde cada um é testado
 ├─ carga/README.md                    roteiro dos testes de carga e escalabilidade (local e AWS)
 └─ relatorios/
+   ├─ escalabilidade-e-custo.md              o balanceamento funcionou? e o custo para 100 mil, 1 milhão e 10 milhões de pacientes
    ├─ relatorio-de-qualidade-2026-11-05.md   resultados consolidados da rodada
    ├─ junit-api-2026-11-05.xml               resultado de cada teste da API (formato JUnit)
    ├─ cobertura-api-2026-11-05.json          cobertura de código por arquivo
-   └─ carga-local-2026-11-05.json            linha de base do teste de carga (máquina local)
+   ├─ carga-local-2026-11-05.json            linha de base do teste de carga (máquina local)
+   ├─ capacidade-consultas-local-2026-11-09.json  quanto 1 instância aguenta em cada consulta
+   ├─ carga-aws-c02/c03-2026-11-06.json, escalabilidade-aws-2026-11-06.json  carga na AWS (sem a correção do keep-alive)
+   └─ carga-aws-pos-correcao-2026-11-05/     carga na AWS com a correção (0% de erros) e métricas do CloudWatch
 ```
 
 ## Como rodar
