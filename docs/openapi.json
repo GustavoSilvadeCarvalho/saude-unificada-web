@@ -1392,6 +1392,222 @@
         ]
       }
     },
+    "/api/me/doctors": {
+      "get": {
+        "description": "Quem me atendeu (ou vai atender), quem abriu o meu prontuário e quem eu bloqueei. É a lista para o paciente controlar quem acessa os dados (privacidade / LGPD).",
+        "operationId": "MeController_doctors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedDoctorResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Médicos ligados a mim e quem está bloqueado",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/blocked-doctors/{doctorId}": {
+      "put": {
+        "description": "O médico passa a receber 403 ao abrir o prontuário, o histórico ou os documentos, e não registra atendimento. Os demais médicos continuam com acesso. Repetir não dá erro.",
+        "operationId": "MeController_block",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedDoctorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Id que não é de médico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Médico não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bloqueia o acesso de um médico ao meu prontuário",
+        "tags": [
+          "Paciente (app)"
+        ]
+      },
+      "delete": {
+        "operationId": "MeController_unblock",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedDoctorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Id que não é de médico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Médico não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Libera de novo o acesso de um médico",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
     "/api/me/appointments/{id}/documents/{documentId}/download": {
       "get": {
         "description": "Mesmo funcionamento do link do médico (5 minutos, sem token). Só documentos do próprio paciente.",
@@ -2584,6 +2800,41 @@
           "userName",
           "userRole",
           "action"
+        ]
+      },
+      "LinkedDoctorResponse": {
+        "type": "object",
+        "properties": {
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica"
+          },
+          "crm": {
+            "type": "string",
+            "example": "CRM-SP 123456"
+          },
+          "blocked": {
+            "type": "boolean",
+            "example": false,
+            "description": "true: o médico não consegue abrir o prontuário"
+          },
+          "blockedAt": {
+            "type": "string",
+            "example": "2026-11-09T14:00:00.000Z"
+          }
+        },
+        "required": [
+          "doctorId",
+          "name",
+          "blocked"
         ]
       }
     }

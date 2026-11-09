@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { isValidObjectId, type Model, type Types } from 'mongoose'
+import { isValidObjectId, type Model, Types } from 'mongoose'
 import { User, type UserDocument } from './user.schema.js'
 
 @Injectable()
@@ -31,6 +31,15 @@ export class UsersService {
   }
 
   /** Especialidade de cada médico, por id (usado no resumo de atendimentos do prontuário) */
+  /** Médicos pelos ids (ignora ids que não são de médico) */
+  findDoctors(ids: string[]) {
+    if (ids.length === 0) return Promise.resolve([])
+    return this.userModel
+      .find({ _id: { $in: ids.map((id) => new Types.ObjectId(id)) }, role: 'medico' }, { name: 1, specialty: 1, crm: 1 })
+      .lean()
+      .exec()
+  }
+
   async findSpecialties(ids: Types.ObjectId[]): Promise<Map<string, string | undefined>> {
     if (ids.length === 0) return new Map()
     const users = await this.userModel.find({ _id: { $in: ids } }, { specialty: 1 }).lean().exec()

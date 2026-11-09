@@ -9,6 +9,7 @@ import { initials, newVerificationCode, normalizeVerificationCode, sha256 } from
 import { UsersService } from '../users/users.service.js'
 import { TransactionRunner } from '../database/transaction.runner.js'
 import { Patient } from '../patients/patient.schema.js'
+import { PrivacyService } from '../privacy/privacy.service.js'
 import { StorageService } from '../storage/storage.service.js'
 import type { DocumentType } from './appointment.constants.js'
 import { Appointment, type AppointmentDocument } from './appointment.schema.js'
@@ -37,6 +38,7 @@ export class DocumentsService {
     private readonly auditService: AuditService,
     private readonly transactions: TransactionRunner,
     private readonly usersService: UsersService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   /**
@@ -53,6 +55,7 @@ export class DocumentsService {
     if (!appointment.doctorId.equals(user.id)) {
       throw new ForbiddenException('Só o médico do atendimento pode anexar documentos.')
     }
+    await this.privacy.assertCanAccess(user, appointment.patientCpf)
     if (appointment.documents.length >= MAX_DOCUMENTS) {
       throw new BadRequestException(`Limite de ${MAX_DOCUMENTS} documentos por atendimento.`)
     }
@@ -125,6 +128,7 @@ export class DocumentsService {
     if (user.role === 'paciente' && appointment.patientCpf !== user.cpf) {
       throw new NotFoundException(APPOINTMENT_NOT_FOUND)
     }
+    await this.privacy.assertCanAccess(user, appointment.patientCpf)
     const document = isValidObjectId(documentId)
       ? appointment.documents.find((d) => d._id?.equals(documentId))
       : undefined

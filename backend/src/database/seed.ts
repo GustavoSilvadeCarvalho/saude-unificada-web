@@ -9,6 +9,7 @@ import { REGIONS } from '../common/regions.js'
 import { todayDateOnly } from '../common/validators.js'
 import { newVerificationCode, sha256 } from '../common/verification.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
+import { AccessBlock, AccessBlockSchema } from '../privacy/access-block.schema.js'
 import { Region, RegionSchema } from '../regions/region.schema.js'
 import { RegionalStat, RegionalStatSchema } from '../regions/regional-stat.schema.js'
 import { createStorage } from '../storage/storage.factory.js'
@@ -94,9 +95,10 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   const auditModel = getModel(connection, AuditLog.name, AuditLogSchema)
   const regionModel = getModel(connection, Region.name, RegionSchema)
   const regionalStatModel = getModel(connection, RegionalStat.name, RegionalStatSchema)
+  const accessBlockModel = getModel(connection, AccessBlock.name, AccessBlockSchema)
   // Deixa os índices iguais aos dos schemas (ex.: e-mail e CPF únicos), apagando os antigos
   // que não existem mais. Assim um banco criado numa versão anterior continua funcionando.
-  const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel]
+  const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel, accessBlockModel]
   await Promise.all(models.map((model) => model.syncIndexes()))
 
   // Regiões primeiro: o cadastro de paciente é validado por elas
@@ -155,8 +157,9 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   )
   await appointmentModel.insertMany(appointments)
 
-  // A trilha de auditoria começa vazia a cada seed
+  // A trilha de auditoria e os bloqueios de acesso começam vazios a cada seed
   await auditModel.deleteMany({})
+  await accessBlockModel.deleteMany({})
 
   return {
     users: seedUsers.length,

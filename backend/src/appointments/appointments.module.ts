@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AuditModule } from '../audit/audit.module.js'
 import { TransactionRunner } from '../database/transaction.runner.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
+import { PrivacyModule } from '../privacy/privacy.module.js'
 import { UsersModule } from '../users/users.module.js'
 import { Appointment, AppointmentSchema } from './appointment.schema.js'
 import { AppointmentsController } from './appointments.controller.js'
@@ -20,6 +21,7 @@ import { VerificationController } from './verification.controller.js'
     ]),
     AuditModule,
     UsersModule,
+    PrivacyModule,
   ],
   controllers: [AppointmentsController, DocumentsController, VerificationController],
   providers: [AppointmentsService, DocumentsService, TransactionRunner],
