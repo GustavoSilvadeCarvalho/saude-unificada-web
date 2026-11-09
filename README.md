@@ -40,6 +40,22 @@ cd backend && npm install && npm run dev:memory
 
 Sobe a API com um MongoDB em memória e os dados de teste. Swagger em http://localhost:3000/api/docs.
 
+### Site + API com os dados inventados (para testar tudo junto)
+
+Terminal 1, a API em memória (o seed roda sozinho e volta ao estado inicial a cada reinício):
+
+```bash
+cd backend && npm install && npm run dev:memory
+```
+
+Terminal 2, o site apontando para ela:
+
+```bash
+cd frontend && npm install && cp .env.example .env && npm run dev
+```
+
+No Windows (PowerShell), troque `cp` por `copy`. Abra http://localhost:5173/login: a tela mostra os usuários de teste com um botão **Preencher**. Sem o `.env`, o site usa os dados fixos de `frontend/src/mocks` e não precisa da API.
+
 ### Com Docker (API + MongoDB)
 
 Precisa só do [Docker](https://www.docker.com/products/docker-desktop/).
