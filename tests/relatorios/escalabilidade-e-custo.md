@@ -241,7 +241,200 @@ Mesmas referências de preço da seção 5.3 (aproximadas). Os documentos estão
   - o preço do Atlas em escala depende de negociação;
   - não entram a equipe, o suporte e a integração com os sistemas dos hospitais.
 
-## 7. Conclusão
+## 7. Banco de dados e arquivos ao longo de 10 anos (cenário Brasil)
+
+### 7.1 O que a lei permite apagar
+
+| Dado | Pode apagar depois de 5 anos? | Regra |
+|---|---|---|
+| **Prontuário** (o documento do paciente e o histórico de atendimentos) | **Não** | Lei 13.787/2018, art. 6º: mínimo de **20 anos a partir do último registro**. Para o prontuário nativamente eletrônico, a Resolução CFM 1.821/2007 é lida por parte das fontes como **guarda permanente** |
+| **Receitas, laudos e exames anexados** (PDFs) | **Não** | Fazem parte do prontuário: mesma regra |
+| **Trilha de auditoria** (quem abriu o prontuário e quando) | **Sim, por política nossa** | Não é prontuário. O Marco Civil da Internet (art. 15) exige pelo menos 6 meses. Escolhemos guardar 5 anos, por segurança e para responder a pedidos com base na LGPD |
+
+**Conclusão:** em 10 anos **nada do prontuário é apagado**. A economia vem de **mover o que é antigo para armazenamento barato** (S3 Glacier), não de descartar. Só a auditoria com mais de 5 anos é apagada.
+
+### 7.2 Como os dados ficam guardados
+
+É o desenho que a API já usa:
+
+- **Um documento por paciente** (coleção `patients`, chave = CPF): alergias, remédios em uso, condições, cirurgias e exames. Ele é **atualizado a cada atendimento** pelo médico que atendeu. Fica sempre no banco, porque é o que o médico abre primeiro.
+- **Um registro por atendimento** (coleção `appointments`): data, médico, resumo e lista de documentos. É o histórico.
+- **A auditoria** (coleção `audit_logs`): uns 3 registros por atendimento.
+- **Os arquivos** (receitas, laudos) ficam no **S3**. O banco guarda só o nome e o código de verificação.
+
+| Idade do dado | Documento do paciente | Atendimentos (histórico) | Auditoria | PDFs |
+|---|---|---|---|---|
+| 0 a 90 dias | Atlas | Atlas | Atlas | S3 Standard |
+| 90 dias a 2,5 anos | Atlas | Atlas | Atlas | S3 Standard-IA (acesso raro) |
+| **Mais de 2,5 anos** | **Atlas** (sempre o atual) | **S3 Glacier Instant Retrieval**, em JSON compactado | **S3 Glacier Deep Archive** | **S3 Glacier Instant Retrieval** |
+| Mais de 5 anos | Atlas | Glacier | **Apagada** | Glacier |
+
+O Glacier Instant Retrieval devolve o arquivo **na hora** (milissegundos). O médico continua abrindo um exame de 2019 normalmente, só que o armazenamento custa ~6 vezes menos que o S3 comum.
+
+### 7.3 Premissas
+
+| Premissa | Valor |
+|---|---|
+| Atendimentos por dia | 1,5 milhão (baixo) e 2,5 milhões (alto), como na seção 6 |
+| Pacientes cadastrados | 80 milhões no 1º ano, 150 milhões no 5º, 190 milhões no 10º |
+| Documento do paciente | 8 KB, crescendo até 10 KB em 10 anos |
+| Cada atendimento | 1,5 KB de histórico + 0,75 KB de auditoria |
+| PDFs | Metade dos atendimentos gera 1 arquivo de 300 KB |
+| Compactação ao arquivar o JSON | O arquivo fica com 30% do tamanho |
+| Preço do Atlas (regra de bolso) | **US$ 1,50 por GB por mês de dado no banco**, já com 3 cópias, backup e servidores. Bate com o M60 da seção 6 |
+| Preços do S3 (us-east-1) | Standard US$ 0,023/GB · Standard-IA 0,0125 · Glacier Instant Retrieval 0,004 · Glacier Deep Archive 0,00099 |
+
+### 7.4 Resultado ano a ano (cenário baixo: 1,5 milhão de atendimentos por dia)
+
+| Ano | Pacientes | Dados no Atlas | JSON no Glacier | PDFs no S3 | Custo no mês (US$) | **Sem arquivar** (US$) |
+|---|---|---|---|---|---|---|
+| 1 | 80 mi | 1,9 TB | — | 82 TB | 4.074 | 4.074 |
+| 2 | 100 mi | 3,3 TB | — | 164 TB | 7.225 | 7.225 |
+| 3 | 120 mi | 4,1 TB | 0,2 TB | 246 TB | 9.115 | 10.388 |
+| 5 | 150 mi | 4,4 TB | 0,9 TB | 411 TB | 10.251 | 16.614 |
+| 7 | 166 mi | 4,6 TB | 1,4 TB | 575 TB | 11.226 | 22.679 |
+| **10** | **190 mi** | **5,0 TB** | **2,2 TB** | **821 TB** | **12.724 (~R$ 70 mil)** | **31.813 (~R$ 175 mil)** |
+
+### 7.5 Resultado ano a ano (cenário alto: 2,5 milhões de atendimentos por dia)
+
+| Ano | Pacientes | Dados no Atlas | JSON no Glacier | PDFs no S3 | Custo no mês (US$) | **Sem arquivar** (US$) |
+|---|---|---|---|---|---|---|
+| 1 | 80 mi | 2,7 TB | — | 137 TB | 6.134 | 6.134 |
+| 2 | 100 mi | 4,9 TB | — | 274 TB | 11.202 | 11.202 |
+| 3 | 120 mi | 6,2 TB | 0,3 TB | 411 TB | 14.160 | 16.281 |
+| 5 | 150 mi | 6,5 TB | 1,5 TB | 684 TB | 15.736 | 26.340 |
+| 7 | 166 mi | 6,7 TB | 2,4 TB | 958 TB | 17.150 | 36.238 |
+| **10** | **190 mi** | **7,0 TB** | **3,6 TB** | **1.369 TB** | **19.307 (~R$ 106 mil)** | **51.121 (~R$ 281 mil)** |
+
+"Sem arquivar" significa tudo no Atlas para sempre, a auditoria nunca apagada e os PDFs no S3 Standard-IA.
+
+### 7.6 Total em 10 anos (só banco e arquivos)
+
+| | 1,5 milhão/dia | 2,5 milhões/dia |
+|---|---|---|
+| **Com arquivamento no Glacier** | **US$ 1,12 milhão (~R$ 6,2 milhões)** | **US$ 1,72 milhão (~R$ 9,5 milhões)** |
+| Sem arquivamento | US$ 1,99 milhão (~R$ 10,9 milhões) | US$ 3,17 milhões (~R$ 17,4 milhões) |
+| **Economia** | **44%** | **46%** |
+| Média por mês ao longo dos 10 anos | ~R$ 51 mil | ~R$ 79 mil |
+
+Fora isso, a API (servidores, load balancer, CloudFront, firewall) soma ~US$ 1.400 a 2.300 por mês (seção 6.3). Esse valor quase não muda com o tempo, porque depende do movimento e não do histórico.
+
+### 7.7 Leitura
+
+- **O banco para de crescer depois de 2,5 anos.** Com o arquivamento, o Atlas estabiliza em **5 a 7 TB**. Só os documentos dos pacientes e os 2,5 anos mais recentes ficam nele. Sem arquivar, ele chega a **14 a 22 TB** em 10 anos, e o custo do banco fica cerca de 3 vezes maior.
+- **O que mais cresce são os PDFs**, que chegam a 800 TB a 1,4 PB em 10 anos e a 40% a 45% do custo no 10º ano. Medidas possíveis:
+  - **Glacier Deep Archive para PDFs com mais de 5 anos.** Custa 4 vezes menos que o Instant Retrieval, mas o arquivo demora até 12 h para ser devolvido. Economiza cerca de **US$ 1.200 por mês no 10º ano** (cenário baixo).
+  - **Comprimir as imagens dos exames** antes de guardar. Muitos PDFs escaneados passam de 1 MB e cairiam para 200 a 300 KB.
+- **Custo de leitura do Glacier:** o médico abrir um exame antigo custa US$ 0,03 por GB. Mesmo que 1% do arquivo seja lido por mês, dá menos de US$ 200 por mês no 10º ano.
+- **Precisão:** os números dependem muito do tamanho médio dos PDFs e de quantos atendimentos geram arquivo. O preço do Atlas em escala é uma regra de bolso; no mundo real ele seria negociado.
+
+## 8. E se fosse infraestrutura própria? E quão realista é essa conta?
+
+### 8.1 As duas infraestruturas dedicadas
+
+Separando como o grupo propôs:
+
+- **Infra de dados:** banco e arquivos.
+- **Infra da aplicação:** API e site.
+
+Cada uma precisa existir em **2 data centers**, um principal e um de contingência. Um sistema de saúde nacional não pode parar nem perder dado se um prédio pegar fogo ou ficar sem energia.
+
+| Infra | O que tem em cada data center | Equivale na AWS a |
+|---|---|---|
+| **Dados** | 3 servidores de banco com SSD NVMe (MongoDB em réplica). Armazenamento de objetos próprio (servidores com dezenas de HDs, software tipo Ceph ou MinIO) para os PDFs: ~1 PB útil no cenário baixo e ~1,7 PB no alto, em 10 anos. **Biblioteca de fitas LTO** no data center de contingência, para a cópia de segurança e o arquivo antigo | Atlas, S3 e Glacier |
+| **Aplicação** | 3 servidores para a API e o site, um par de firewalls/balanceadores, switches, 2 links de internet e proteção contra ataques DDoS | ECS Fargate, load balancer, CloudFront e WAF |
+
+**A infra da aplicação é pequena:** no pico, o país inteiro precisa de 7 a 12 vCPUs (seção 6.2), o que cabe em 3 servidores comuns. **A infra de dados é a grande:** os PDFs passam de 1 PB em 10 anos.
+
+### 8.2 Custo total em 10 anos: nuvem x infraestrutura própria (R$ milhões)
+
+Para comparar de forma justa, os dois lados recebem o que um sistema real precisa:
+- contingência em outro lugar;
+- dados no Brasil (região São Paulo);
+- suporte do fornecedor;
+- equipe;
+- segurança.
+
+| Item | Nuvem: 1,5 mi/dia | Nuvem: 2,5 mi/dia | Própria: 1,5 mi/dia | Própria: 2,5 mi/dia |
+|---|---|---|---|---|
+| Banco e arquivos (seção 7) | 6,2 | 9,5 | — | — |
+| API, site, CDN, firewall | 0,9 | 1,5 | — | — |
+| Contingência em outra região | 2,2 | 3,3 | (incluída nos 2 data centers) | (incluída) |
+| Região São Paulo (~35% mais cara que a Virgínia) | 2,5 | 3,9 | — | — |
+| Suporte do fornecedor (~7% da conta) | 0,8 | 1,3 | — | — |
+| Equipamentos (comprados no ano 1 e trocados no ano 5) | — | — | 4,9 | 5,6 |
+| Contratos de manutenção dos equipamentos (~10% ao ano) | — | — | 2,4 | 2,8 |
+| Aluguel de espaço em data center (*colocation*, ~R$ 12 mil por rack por mês) | — | — | 7,2 (5 racks) | 8,6 (6 racks) |
+| Links de internet (2 por site) e enlace entre os sites | — | — | 6,6 | 6,6 |
+| Proteção contra DDoS | — | — | 1,8 | 1,8 |
+| **Subtotal de infraestrutura** | **12,6** | **19,4** | **22,9** | **25,5** |
+| Equipe de operação (salário + encargos, R$ 18 mil/pessoa) | 19,4 (5 pessoas) | 19,4 | 38,9 (10 pessoas, plantão 24 h) | 38,9 |
+| Segurança e conformidade (pentest, SIEM, ISO 27001, LGPD) | 6,0 | 6,0 | 6,0 | 6,0 |
+| **Total em 10 anos** | **~R$ 38 milhões** | **~R$ 45 milhões** | **~R$ 68 milhões** | **~R$ 70 milhões** |
+| **Média por mês** | **~R$ 317 mil** | **~R$ 374 mil** | **~R$ 565 mil** | **~R$ 586 mil** |
+
+**Por que a infraestrutura própria sai mais cara aqui:**
+
+- **Equipamento é a menor parte:** ~R$ 5 milhões em 10 anos. O que pesa é tudo em volta: espaço com energia e refrigeração, links redundantes, contratos de manutenção e, principalmente, **gente de plantão 24 h**, porque disco queima de madrugada.
+- **Na nuvem, a AWS e o Atlas fazem parte desse trabalho.** A equipe cai de ~10 para ~5 pessoas.
+- **Estas premissas são as que mais mudam o resultado:** salário (R$ 18 mil + 80% de encargos), aluguel de rack e preço por TB (US$ 150 por TB útil, servidores comuns com software livre).
+
+### 8.3 E só os arquivos em infraestrutura própria (híbrido)?
+
+Os PDFs são o que mais cresce. Mas tirar só eles da nuvem **não compensa**:
+
+| | 1,5 mi/dia | 2,5 mi/dia |
+|---|---|---|
+| PDFs na nuvem em 10 anos (São Paulo) | ~R$ 3,0 milhões | ~R$ 5,1 milhões |
+| PDFs em armazenamento próprio + fitas, com 2 racks por site, enlace e 3 pessoas de plantão | ~R$ 20,6 milhões | ~R$ 21,2 milhões |
+
+Com 1 a 1,7 PB, o Glacier é barato demais para valer a pena montar uma operação de armazenamento só para isso.
+
+### 8.4 Quando a infraestrutura própria compensa
+
+**1. Quando o data center já existe e já está pago.** É o caso de órgãos como DATASUS, Serpro ou Dataprev:
+- sem aluguel de espaço;
+- links e proteção já contratados;
+- equipe compartilhada (+4 pessoas em vez de 10).
+
+Nesse caso a conta cai para **~R$ 33 a 35 milhões em 10 anos**: equipamentos, manutenção, energia, enlace de contingência, 4 pessoas e segurança. **Fica parecida com a nuvem, ou um pouco mais barata.**
+
+**2. Quando a escala é muito maior:**
+- vários petabytes por ano;
+- milhares de servidores ligados o tempo todo;
+- exigência de soberania de dados que impeça a nuvem pública.
+
+Para o tamanho deste projeto, **a nuvem é a escolha mais barata e mais simples**. A arquitetura também permite migrar no futuro sem reescrever a API: MongoDB e um armazenamento compatível com S3 (MinIO, Ceph) rodam em qualquer lugar.
+
+### 8.5 Esta conta é realista?
+
+**Em parte.** As seções 5 a 7 calculam **só a infraestrutura**, com preços de referência:
+- a conta de nuvem em si (máquinas, banco, armazenamento) está na **ordem de grandeza certa**;
+- **o custo real de operar um sistema desse tamanho é de 4 a 5 vezes maior**.
+
+| | Seções 6 e 7 (só infra, Virgínia) | Seção 8 (operação realista, nuvem) |
+|---|---|---|
+| 10 anos | R$ 7 a 11 milhões | **R$ 38 a 45 milhões** |
+| Por mês | R$ 59 a 92 mil | **R$ 317 a 374 mil** |
+| Por atendimento | ~R$ 0,0012 a 0,0013 | **~R$ 0,005 a 0,007** (menos de 1 centavo) |
+
+**O que a seção 8 acrescentou:**
+- região São Paulo;
+- contingência;
+- suporte do fornecedor;
+- equipe de operação, que é **mais da metade do custo**;
+- segurança e conformidade.
+
+**O que ainda fica de fora** (e num projeto real pode ser maior que tudo acima):
+- equipe de **desenvolvimento** contínuo do sistema;
+- **integração com os sistemas dos hospitais** (padrões HL7/FHIR, um a um);
+- **suporte ao usuário** (central de atendimento para médicos e pacientes) e treinamento;
+- jurídico e encarregado de dados da LGPD (DPO);
+- certificados digitais ICP-Brasil para assinar receitas.
+
+**Resumo:** a infraestrutura de nuvem para o Brasil inteiro custaria algo como **R$ 60 a 90 mil por mês**. Operar de verdade, com equipe, contingência e segurança, fica perto de **R$ 300 a 400 mil por mês**. Em qualquer dos casos, é **menos de 1 centavo por atendimento**.
+
+## 9. Conclusão
 
 - O **auto scaling e o load balancer funcionam**:
   - a API sobe e desce sozinha conforme a carga;
@@ -250,3 +443,5 @@ Mesmas referências de preço da seção 5.3 (aproximadas). Os documentos estão
 - **O ponto de melhoria** é a distribuição desigual da carga entre as tarefas. Ela tem solução simples (seção 4) e ainda precisa ser testada.
 - **Para 1 milhão de pacientes, a estimativa é de ~R$ 2.800 por mês** (~R$ 1.450 com as otimizações): menos de **R$ 0,003 por paciente por mês**, ou **~R$ 140 por milhão de requisições**. O maior custo é o banco de dados, não os servidores da API.
 - **No cenário Brasil inteiro (1,5 a 2,5 milhões de atendimentos por dia), a estimativa é de R$ 30 a 47 mil por mês**, menos de R$ 0,001 por atendimento (seção 6).
+- **Em 10 anos, banco e arquivos custam ~R$ 6,2 a 9,5 milhões no total.** Mover para o Glacier o que tem mais de 2,5 anos economiza **44% a 46%** sem apagar nenhum dado do prontuário. A lei exige guardar o prontuário por no mínimo 20 anos, e só a auditoria pode ser apagada aos 5 (seção 7).
+- **Operação realista em 10 anos:** ~R$ 38 a 45 milhões na nuvem (~R$ 317 a 374 mil por mês) contra ~R$ 68 a 70 milhões em infraestrutura própria. A infraestrutura própria só empata quando o data center e a equipe já existem, como num órgão público (seção 8).
