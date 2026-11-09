@@ -155,6 +155,7 @@ Objeto `Appointment`:
   "status": "agendado",
   "reason": "Retorno — controle glicêmico",
   "summary": "",
+  "instructions": "Jejum de 8 horas. Trazer o resultado da HbA1c.",
   "documents": [
     { "id": "doc-1", "fileName": "receita.pdf", "type": "receita", "uploadedAt": "2026-10-01T14:40:00.000Z" }
   ]
@@ -162,6 +163,7 @@ Objeto `Appointment`:
 ```
 
 - `status`: `"realizado"` | `"agendado"`
+- `instructions` (opcional): orientações para o paciente antes do atendimento (jejum, preparo, o que levar). Aparece no app em "Próximos atendimentos".
 - `documents[].type`: `"receita"` | `"laudo"` | `"exame"` | `"outro"`
 
 Todas as rotas de atendimento são só do perfil `medico` (gestor recebe `403`).
@@ -207,6 +209,7 @@ Regras:
 - `scheduledAppointmentId` (opcional): se informado, o backend **atualiza** esse agendamento (status, data, resumo) em vez de criar outro. Sem `reason` novo, mantém o do agendamento. Com `status: "agendado"`, remarca.
 - Itens de `newAllergies`, `newMedications` e `newConditions` são **adicionados** às listas do paciente (o backend gera os `id`). `prescribedBy` vazio vira o nome do médico. CID gravado em maiúsculas.
 - Com `status: "agendado"` as três listas chegam vazias e `summary` pode ser vazio.
+- `instructions` (opcional, até 1000 caracteres): orientações para o paciente. Ao concluir ou remarcar sem enviar, mantém as do agendamento.
 - Atendimento, prontuário e auditoria são gravados numa **transação** (tudo ou nada).
 
 Regras (as mesmas do formulário do site; violá-las dá `400` com a mensagem):
@@ -373,6 +376,7 @@ Exemplo de `GET /me/access-log`:
 | `doctorId` | id do médico |
 | `reason` | motivo da consulta |
 | `summary` | resumo do atendimento |
+| `instructions` | orientações para o paciente antes do atendimento |
 | `documents` | documentos anexados |
 | `role` | perfil (`medico` \| `gestor` \| `paciente`) |
 | `specialty` | especialidade |

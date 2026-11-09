@@ -132,6 +132,8 @@ export interface Appointment {
   status: AppointmentStatus
   reason?: string
   summary: string
+  /** Orientações para o paciente antes do atendimento (jejum, preparo, o que levar) */
+  instructions?: string
   documents: AttachedDocument[]
 }
 
@@ -145,6 +147,8 @@ export interface CreateAppointmentInput {
   status: AppointmentStatus
   reason?: string
   summary: string
+  /** Orientações para o paciente (opcional, usado no agendamento) */
+  instructions?: string
   newAllergies: Omit<Allergy, 'id'>[]
   newMedications: Omit<Medication, 'id'>[]
   newConditions: Omit<ClinicalCondition, 'id'>[]
