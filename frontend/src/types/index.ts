@@ -119,6 +119,10 @@ export interface AttachedDocument {
   type: DocumentType
   /** Data/hora ISO do upload */
   uploadedAt: string
+  /** Código para conferir a autenticidade em GET /verify/:code */
+  verificationCode?: string
+  /** SHA-256 do arquivo enviado */
+  sha256?: string
 }
 
 export interface Appointment {
