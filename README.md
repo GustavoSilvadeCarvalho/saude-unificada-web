@@ -26,4 +26,14 @@ cd frontend && npm install && npm run dev
 cd backend && npm install && npm run dev
 ```
 
+```bash
+cd mobile && npm install && npm start
+```
+
+O app usa React Native + **Expo (SDK 58)**: rode `npm start` na pasta `mobile`,
+abra o Expo Go no celular (mesma rede Wi-Fi do PC) e escaneie o QR code. O
+celular precisa acessar a API pelo IP do PC (ex.: `http://192.168.15.8:3000/api`
+no `mobile/.env` — veja a tabela completa no README de `mobile/`). Para o backend
+sem MongoDB instalado, use `npm run dev:memory`.
+
 Veja o README de cada pasta para detalhes.
