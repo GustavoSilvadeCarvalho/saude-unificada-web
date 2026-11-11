@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import type { Model } from 'mongoose'
 import { Appointment } from '../appointments/appointment.schema.js'
 import { AuditService } from '../audit/audit.service.js'
+import { PrivacyService } from '../privacy/privacy.service.js'
 import type { AuthUser } from '../common/roles.js'
 import { INVALID_REGION, RegionsService } from '../regions/regions.service.js'
 import { UsersService } from '../users/users.service.js'
@@ -21,12 +22,14 @@ export class PatientsService {
     @InjectModel(Patient.name) private readonly patientModel: Model<Patient>,
     @InjectModel(Appointment.name) private readonly appointmentModel: Model<Appointment>,
     private readonly auditService: AuditService,
+    private readonly privacy: PrivacyService,
     private readonly usersService: UsersService,
     private readonly regionsService: RegionsService,
   ) {}
 
   /** Prontuário unificado acessado por um profissional: o acesso fica na auditoria */
   async getRecord(cpf: string, user: AuthUser) {
+    await this.privacy.assertCanAccess(user, cpf)
     const record = await this.record(cpf)
     await this.auditService.record(user, 'patient.view', cpf)
     return record

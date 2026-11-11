@@ -55,22 +55,22 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Decisões de infraestrutura e custo (definidas em 05/11)
 
-**Orçamento: no máximo R$ 50 no projeto inteiro (≈ US$ 9). Tudo que puder ser gratuito, é gratuito.**
+**Orçamento: no máximo R$ 100 no projeto inteiro (≈ US$ 18; era R$ 50 até o bloco 12). Tudo que puder ser gratuito, é gratuito.** A parte que cobra por hora só fica ligada nos testes, por algumas semanas e na gravação do vídeo.
 
 | O quê | Onde | Custo |
 |---|---|---|
-| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)**, região São Paulo | R$ 0 |
-| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado | centavos |
-| API "no ar" durante a entrega | 1 instância pequena (EC2 com Docker) | ~US$ 5–8 |
-| Teste de escalabilidade | ECS Fargate + ALB com auto scaling 1→3, **ligado só nas rodadas de teste** (~2 h) e destruído com `cdk destroy` | < US$ 1 |
-| Monitoramento | CloudWatch (logs com retenção de 7 dias, 1 dashboard, poucos alarmes) | ~R$ 0 |
+| Dados (usuários, pacientes, atendimentos, regiões) | **MongoDB Atlas, cluster Free (M0)** (cluster que o Matheus já tinha, banco `saude-unificada`) | R$ 0 |
+| Arquivos (PDF, JPG, PNG de receitas e laudos) | **AWS S3**, bucket privado (stack `SaudeUnificadaData`, fica ligada) | centavos |
+| API no ar + escalabilidade | **ECS Fargate Spot** (0,25 vCPU, 512 MB) com auto scaling 1→3 pela CPU, atrás de **ALB + CloudFront** (HTTPS grátis). Stack `SaudeUnificadaApi`, **sobe e desce sob demanda** | ~US$ 0,042/h (≈ R$ 0,23/h) |
+| Monitoramento | CloudWatch (logs 7 dias, dashboard, 4 alarmes por e-mail via SNS) + AWS Budgets em US$ 18 | ~R$ 0 |
 | Site | Vercel | R$ 0 |
 | Plano C | VMs com **OpenStack**, só na reta final e se a AWS não der certo | — |
 
-- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Conferir se ECS/ALB estão liberados no plano Free; se não, usar EC2 + Auto Scaling Group.
-- **Região sa-east-1 (São Paulo)** para API, S3 e Atlas: argumento de LGPD (dados de saúde no Brasil) e menor latência na demo.
-- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública.
-- **Alerta de orçamento (AWS Budgets)** em US$ 3 e US$ 8 no primeiro dia.
+- **Conta AWS nova no plano Free:** contas criadas depois de 15/07/2025 ganham US$ 100 em créditos (até US$ 200 com as atividades de onboarding) e, no plano Free, nada é cobrado no cartão; a conta fecha sozinha em 6 meses. Se ECS/ALB estiverem bloqueados no plano Free, trocar para o plano pago (os créditos continuam valendo).
+- **Região us-east-1 (Virgínia do Norte).** O plano era São Paulo (LGPD e latência), mas a conta foi criada pelo novo cadastro da AWS ("projetos", conta `Open Horizons`), cuja SCP gerenciada pela AWS só libera us-east-1, us-west-2 e a região do projeto: em sa-east-1 tudo volta `explicit deny`. A mesma SCP bloqueava ECS, EC2, ELB, ECR, SSM e SNS mesmo em us-east-1; em 05/11 o Matheus usou **"Ativar recursos avançados"** (sem volta; remove o limite de gastos do projeto) e o deploy foi feito na conta `060692821732`. us-east-1 é também a mais barata (~US$ 0,042/h com 1 tarefa). No relatório, citar São Paulo como o destino em produção por causa da LGPD.
+- **Sem NAT Gateway** (é a armadilha de custo clássica): tarefas em subnet pública. Por isso o Atlas libera `0.0.0.0/0` (o Fargate não tem IP fixo).
+- **Sem Lambda.** A API roda em contêiner (ECS Fargate). Se a conta bloquear algum serviço, contornar com passos manuais documentados, sem trocar a arquitetura para Lambda.
+- **Esquecer a API ligada 24 h por 3 semanas ≈ US$ 21**: estoura o teto. O orçamento avisa aos 50/80/100% e pela previsão. Rotina: `npm run deploy:api` → testar/gravar → `npm run destroy:api`.
 - **Limites do Atlas Free:** 512 MB, 100 operações/s, 500 conexões. O teste de carga mira principalmente o **login** (bcrypt gasta CPU e faz 1 leitura no banco): a CPU da API sobe e dispara o auto scaling sem estourar o limite do Atlas.
 
 ## Swagger (documentação viva da API)
@@ -82,14 +82,25 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
-Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor) e **bloco 10** (paciente no app, login por CPF) prontos. Próximo: **bloco 11** (Docker e CI) e o **app mobile**.
+Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) **bloco 12** (infraestrutura AWS em `infra/`; **primeiro deploy feito em 05/11**) e **bloco 13** (`tests/`, helmet, compression, limite de login, CORS, `npm audit` zerado; faltam só as rodadas de carga na AWS) prontos. Próximos: **cenários de carga C02–C04 na AWS** (`node tests/carga/cenarios-aws.mjs`, ~35 min, depois de `npm run deploy:api -- -c loginRateLimit=false`), **bloco 14** (integração) e o **app mobile**.
+
+**AWS no ar desde 05/11/2026** (conta `060692821732`, us-east-1, usuário IAM `saude-unificada-deploy`, CLI configurada no Linux):
+- API: `https://d1yvce4t23bis0.cloudfront.net/api` (Swagger em `/api/docs`). O endereço muda se a `SaudeUnificadaApi` for destruída e criada de novo.
+- Bucket: `saudeunificadadata-documents7e5b2978-f4cxv4t2uzog`. Segredos no SSM (`/saude-unificada/mongodb-uri` com a senha nova do Atlas, `/saude-unificada/jwt-secret`).
+- Seed aplicado no Atlas (banco `saude-unificada`) e no S3. Conferido: fumaça 9/9, envio e download de documento no S3 real, ALB direto → 403, HTTP → HTTPS (301), 1 tarefa Fargate Spot.
+- CORS liberado só para `http://localhost:5173`; quando o site estiver na Vercel, refazer o deploy com `-c corsOrigins="http://localhost:5173,https://SITE.vercel.app"`.
+- Alarmes e orçamento vão para o Gmail do Matheus (confirmar a inscrição do SNS no e-mail).
+- **Custa por hora (~R$ 0,23/h):** derrubar com `cd infra && npm run destroy:api` quando não estiver testando.
 
 ```
 backend/
-├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e
+├─ package.json            "type": "module"; scripts dev, dev:memory, build, start, seed, openapi, typecheck, test:e2e, test:cov, test:ci
+├─ Dockerfile              multi-stage (build → deps de produção → runtime node:24-slim, usuário node, HEALTHCHECK em /api/health/live)
+├─ scripts/smoke-test.mjs  teste de fumaça contra uma API no ar (local, Docker, AWS): node backend/scripts/smoke-test.mjs <url>
+├─ scripts/load-test.mjs   carga no login: node backend/scripts/load-test.mjs <url> [--duracao 300] [--usuarios 20] [--saida resultado.json]
 ├─ tsconfig.json           nodenext, decorators + emitDecoratorMetadata, strict
 ├─ tsconfig.build.json     rootDir ./src (o TS 6 exige rootDir explícito)
-├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts, hookTimeout 120s
+├─ vitest.config.e2e.ts    testes em test/**/*.e2e-spec.ts e *.spec.ts; cobertura v8 com mínimo de 90% linhas / 80% branches
 ├─ .env.example            PORT, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, CORS_ORIGINS, UPLOAD_DIR, SWAGGER_ENABLED
 ├─ src/
 │  ├─ main.ts              bootstrap (porta em PORT)
@@ -128,6 +139,7 @@ backend/
 ```
 
 - Usuários de teste: `medico@teste.com`, `cardio@teste.com`, `gestor@teste.com`, senha `123456`. App: Maria (`22916926402`) e João (`27952204408`), senha `paciente123`; Ana (`50717927296`, nascida em `1996-11-05`) sem conta, para demonstrar o primeiro acesso. Pacientes: os 6 dos mocks, com CPFs fictícios (`SEED_CPFS`; Maria = `22916926402`).
+- Dados extras de demonstração em `backend/src/database/seed-demo.ts` (09/11): 3 médicos (`pediatra@`, `gineco@`, `orto@teste.com`), `gestor2@teste.com`, 12 pacientes e 24 atendimentos, com contas no app para Sofia (`89313074893`), Roberto (`52525738080`) e Camila (`55991928819`). Ficam fora de `seed-data.ts` porque os testes contam os dados de lá.
 - Testes: `npm run test:e2e` usa um MongoDB em memória por arquivo. Com `TEST_MONGODB_URI` definida, usam esse servidor (um banco com nome único por arquivo, apagado no fim); o teste de "banco fora do ar" é pulado nesse modo.
 
 ## Convenções de código
@@ -284,7 +296,19 @@ Plano original:
   - `GET /me/access-log`: quem acessou o prontuário (LGPD: o paciente acompanha os acessos; usar `AuditService.findByPatient`).
 - Seed: um paciente de teste (ex.: Maria). Testes: paciente só vê os próprios dados e recebe 403 nas rotas de médico.
 
-### Bloco 11 — Docker e CI → `chore(infra): Docker, docker-compose e pipeline de testes no GitHub Actions`
+### ✅ Bloco 11 — Docker e CI (em 7 commits)
+- `backend/Dockerfile` multi-stage (Node 24 slim, não-root, `npm ci --ignore-scripts` para não baixar o MongoDB dos testes, HEALTHCHECK em `/api/health/live`) e `.dockerignore`.
+- `docker-compose.yml` na raiz: `mongo:8` como replica set `rs0` (o health check inicia o replica set e só libera quando o nó é primário) + API. Seed: `docker compose run --rm api node dist/database/seed.js`.
+- `.github/workflows/ci.yml` (actions v6/v5, que rodam em Node 24): job **API** (typecheck + `npm run test:ci` com cobertura mínima, resumo na página do job e artefato `relatorios-testes-api` com cobertura HTML/lcov + JUnit), job **Docker** (`docker compose up --wait`, seed, teste de fumaça) e job **Site** (build).
+- Cobertura atual: ~97% das linhas, ~88% dos branches.
+- Selo do CI e seção de Docker/testes no README da raiz.
+- Testado de verdade no Docker Desktop do Matheus (05/11): imagem com 101 MB, API e MongoDB saudáveis, seed ok, teste de fumaça 9/9, contêiner rodando como `node`.
+- Esse teste mostrou o aviso "Duplicate DTO: DownloadLinkResponse" do Swagger (a mesma classe criada em dois controllers; vira erro na próxima versão do `@nestjs/swagger`). Corrigido com uma classe só em `appointment.responses.ts`, e o teste do Swagger agora falha se a geração da documentação emitir qualquer aviso.
+- `npm audit` acusa 2 vulnerabilidades moderadas só nas dependências de desenvolvimento (as de produção têm 0). Revisar no bloco 13.
+- **CI no GitHub:** jobs API e Site passaram de primeira; o job Docker falhou porque o `mongo:8` se recusa a iniciar em kernel Linux 6.19 a 7.0.13 (SERVER-121912), que já é o kernel dos runners do GitHub (até no `ubuntu-24.04`: fixar o Ubuntu não resolveu). Correção: o `docker-compose.yml` usa **`mongo:7.0`** (sem o problema; a API funciona igual), com `MONGO_IMAGE` para trocar. O CI mostra o kernel do runner (`uname -r`).
+  - **Atenção no bloco 12:** o Atlas não é afetado (kernel 6.1). Se algum MongoDB 8 rodar numa VM ou EC2 nossa (plano C com OpenStack, por exemplo), conferir o kernel com `uname -r`: precisa ser abaixo de 6.19 ou 7.0.14 em diante. Na dúvida, usar o MongoDB 7.0.
+
+Plano original:
 - `backend/Dockerfile` multi-stage (build → runtime Node slim, usuário não-root) e `.dockerignore`.
 - `docker-compose.yml` na raiz: a API e um MongoDB rodando como replica set (`--replSet rs0` + init), para quem quiser rodar sem `dev:memory`.
 - `.github/workflows/ci.yml`:
@@ -293,45 +317,38 @@ Plano original:
   - no frontend: build.
 - Badge do CI no README.
 
-### Bloco 12 — AWS → `chore(infra): infraestrutura AWS como código`
-- Infra como código em `infra/`, com **AWS CDK em TypeScript** (mesma linguagem do projeto). É a evidência de "configurações de cloud" que o manual pede.
-  - **ECR**: repositório da imagem Docker da API.
-  - **ECS Fargate + Application Load Balancer:**
-    - health check em `/api/health`;
-    - **auto scaling** por CPU, de 1 a 3 tarefas (evidência de escalabilidade).
-  - **S3**: bucket privado para os documentos, com criptografia e bloqueio de acesso público. A permissão vem pela role da tarefa ECS, sem chave no código.
-  - **Secrets Manager / SSM**: `JWT_SECRET` e `MONGODB_URI`.
-  - **CloudWatch:**
-    - logs da API;
-    - dashboard com CPU, memória, requisições e 5xx do ALB;
-    - alarmes de 5xx e de health check (monitoramento básico).
-  - Banco: **MongoDB Atlas** (free tier, já é replica set) na região da AWS `sa-east-1`. Alternativa: DocumentDB, mais caro.
-  - Site: manter na Vercel ou mover para S3 + CloudFront.
-- Workflow `.github/workflows/deploy.yml`: build da imagem, push no ECR e atualização do serviço ECS. Autenticação por OIDC, sem chave da AWS no GitHub.
-- **Custo (ver "Decisões de infraestrutura e custo"):** teto de R$ 50 no projeto todo.
-  - Duas stacks no CDK: `ApiStack` (EC2 pequena com Docker + S3 + CloudWatch, fica no ar durante a entrega) e `ScaleTestStack` (ECS Fargate + ALB + auto scaling, sobe só para o teste de carga e é destruída logo depois).
-  - Se ECS/ALB não estiverem liberados no plano Free, a escalabilidade vira **Auto Scaling Group** de EC2.
-  - Destruir tudo depois da apresentação (`cdk destroy --all`).
-- `docs/infraestrutura.md`: diagrama da arquitetura AWS, passo a passo do deploy, custos.
+### ✅ Bloco 12 — Infraestrutura AWS como código (em 6 commits)
+Detalhes, custos e passo a passo no Windows: [`docs/infraestrutura.md`](infraestrutura.md).
+- `infra/` com **AWS CDK em TypeScript** (aws-cdk-lib 2.275, TS 6, ESM, roda com `tsx`). Scripts: `synth`, `diff`, `bootstrap`, `deploy`, `deploy:api`, `destroy:api`, `destroy:all`, `typecheck`, `test`.
+- **`SaudeUnificadaData`** (fica ligada): bucket S3 privado (criptografado, só HTTPS, sem ACL, apaga uploads incompletos em 1 dia), tópico SNS de alertas (e-mail por `-c alertEmail=...`) e **AWS Budgets** de US$ 18 (avisos 50/80/100% + previsão).
+- **`SaudeUnificadaApi`** (sob demanda):
+  - VPC em 2 AZs só com subnets públicas, **sem NAT**;
+  - **ECS Fargate Spot** 0,25 vCPU / 512 MB (`-c useSpot=false` para o Fargate normal no dia da gravação), imagem montada do `backend/Dockerfile` pelo próprio CDK (vai para o ECR do bootstrap), circuit breaker com rollback;
+  - `MONGODB_URI` e `JWT_SECRET` do **SSM Parameter Store** (SecureString, criados à mão com a AWS CLI; nada de segredo no código); acesso ao S3 pela role da tarefa;
+  - **ALB** que só aceita o header secreto do CloudFront (direto no ALB → 403) e health check em `/api/health/live`;
+  - **CloudFront** com HTTPS, sem cache e repassando tudo menos o Host;
+  - **auto scaling 1→3** por CPU média (alvo 50%);
+  - **CloudWatch**: logs 7 dias, dashboard `saude-unificada-api` (tarefas saudáveis, CPU/memória, requisições, latência p50/p95, 4xx/5xx) e 4 alarmes com e-mail ao disparar e ao normalizar (fora do ar, 5xx, resposta lenta, CPU no limite).
+- `infra/test/infra.test.ts`: 18 testes (`node:test` + `Template` do CDK) das regras de custo, segurança, escalabilidade e monitoramento. Não precisa de conta AWS. Job **Infra** no CI (typecheck, testes, synth).
+- `backend/scripts/load-test.mjs`: carga no login (bcrypt = CPU, 1 leitura no Atlas), relatório a cada 15 s e JSON final (req/s, p50/p95/máx, erros). Teste local: 15 req/s, p95 658 ms, 0 erros.
+- Mudanças em relação ao plano original: sem EC2 fixa (a API inteira é a stack sob demanda, mais barata e já mostra o scaling); sem `deploy.yml` (o deploy é `npm run deploy` da máquina do Matheus, sem credencial da AWS no GitHub); SSM em vez do Secrets Manager (grátis).
+- Primeiro deploy feito em 05/11 (ver "Estado atual"). Falta só a rodada de carga na AWS (bloco 13).
 
-### Bloco 13 — Pasta `tests/` (Qualidade) → `test: plano de testes, testes de carga e relatórios`
-O manual exige a pasta `/tests` na raiz com relatórios e evidências. Os testes de código continuam em `backend/test/`; a raiz organiza a parte de qualidade:
-
-```
-tests/
-├─ README.md                  como rodar cada tipo de teste e onde estão as evidências
-├─ plano-de-testes.md         escopo, estratégia, tipos de teste, ambiente, critérios de aceite, casos de teste (tabela RF → caso → resultado)
-├─ carga/                     scripts k6: login, busca de prontuário, registro de atendimento
-├─ seguranca/                 casos: sem token, perfil errado, token adulterado, injeção NoSQL, upload proibido, CORS
-└─ relatorios/                resultados dos e2e, cobertura, k6 (antes/depois, 1 vs 3 instâncias), prints do CloudWatch e do CI
-```
-
-- Testes não funcionais:
-  - **desempenho**: tempo de resposta p95;
-  - **carga e escalabilidade**: k6 contra a AWS com o auto scaling ligado;
-  - **segurança**: os casos listados em `seguranca/`;
-  - **disponibilidade**: health check e alarmes.
-- Otimizações da Fase 5 com evidência: índices no Mongo, paginação, compressão (`compression`), rate limit no login (`@nestjs/throttler`) e `helmet`.
+### ✅ Bloco 13 — Qualidade e segurança (pasta `tests/`)
+- `backend`:
+  - `helmet` com CSP compatível com o Swagger;
+  - `compression`;
+  - `TRUST_PROXY` (AWS = 2: CloudFront + ALB);
+  - limite de tentativas com `@nestjs/throttler` no login do site, login do app e primeiro acesso: 5/min por IP + conta, 30/min por IP, via `LOGIN_RATE_LIMIT` / `LOGIN_RATE_LIMIT_IP`, e 0 desliga. Os testes desligam por padrão, e `createTestApp(env)` liga.
+- `test/security.e2e-spec.ts`: cabeçalhos, CORS, compressão e limite de login.
+- `npm audit` zerado na API (`overrides` do `minimatch` no `@nestjs/cli`) e no site (Vite 8.3.6). Na infra, risco aceito: o `minimatch` vem empacotado no `aws-cdk-lib`.
+- `infra`: a API recebe `TRUST_PROXY=2` e o limite de login. `-c loginRateLimit=false` desliga o limite só para o teste de carga.
+- `tests/`:
+  - `plano-de-testes.md` (estratégia, critérios, rastreabilidade RF/RNF → teste, roteiro manual do site M01–M10);
+  - `seguranca/casos-de-seguranca.md` (S01–S50 por OWASP);
+  - `carga/README.md` (cenários C01–C04);
+  - `relatorios/` com o relatório de 05/11 (213 testes, 96,9% de linhas, carga local 16,9 req/s com p95 de 664 ms), JUnit, cobertura e carga local.
+- **Falta:** os cenários C02–C04 (carga e auto scaling) e a fumaça na AWS depois do deploy. Guardar os JSON e os prints em `tests/relatorios/` e preencher um relatório novo com a data da rodada.
 
 ### Bloco 14 — Integração e documentação → `docs: README da API, arquitetura e integração`
 - Ligar o site na API: `frontend/.env` com `VITE_USE_MOCK=false` e `VITE_API_URL` apontando para a API (local e AWS). Testar as telas de ponta a ponta.

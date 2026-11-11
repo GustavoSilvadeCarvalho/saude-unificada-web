@@ -119,6 +119,23 @@ export interface AttachedDocument {
   type: DocumentType
   /** Data/hora ISO do upload */
   uploadedAt: string
+  /** Código para conferir a autenticidade em GET /verify/:code */
+  verificationCode?: string
+  /** SHA-256 do arquivo enviado */
+  sha256?: string
+}
+
+/** Resposta pública de GET /verify/:code (só as iniciais do paciente) */
+export interface VerifiedDocument {
+  valid: true
+  verificationCode: string
+  type: DocumentType
+  fileName: string
+  issuedAt: string
+  doctorName: string
+  doctorCrm?: string
+  patientInitials: string
+  sha256: string
 }
 
 export interface Appointment {
@@ -132,6 +149,8 @@ export interface Appointment {
   status: AppointmentStatus
   reason?: string
   summary: string
+  /** Orientações para o paciente antes do atendimento (jejum, preparo, o que levar) */
+  instructions?: string
   documents: AttachedDocument[]
 }
 
@@ -145,6 +164,8 @@ export interface CreateAppointmentInput {
   status: AppointmentStatus
   reason?: string
   summary: string
+  /** Orientações para o paciente (opcional, usado no agendamento) */
+  instructions?: string
   newAllergies: Omit<Allergy, 'id'>[]
   newMedications: Omit<Medication, 'id'>[]
   newConditions: Omit<ClinicalCondition, 'id'>[]
@@ -154,6 +175,17 @@ export interface CreateAppointmentInput {
 export interface DocumentUpload {
   file: File
   type: DocumentType
+}
+
+/** Médico ligado ao paciente, na tela de privacidade do app (GET /me/doctors) */
+export interface LinkedDoctor {
+  doctorId: string
+  name: string
+  specialty?: string
+  crm?: string
+  /** true: o médico não consegue abrir o prontuário */
+  blocked: boolean
+  blockedAt?: string
 }
 
 /* ---------- Dados regionais (gestor) ---------- */

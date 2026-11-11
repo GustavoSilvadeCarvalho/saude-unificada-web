@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req } from '@nestjs/common'
+import { Controller, Delete, Get, Param, Put, Query, Req } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
   ApiBearerAuth,
@@ -7,28 +7,21 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiProperty,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
 import type { Request } from 'express'
-import { AppointmentResponse } from '../appointments/appointment.responses.js'
+import { AppointmentResponse, DownloadLinkResponse } from '../appointments/appointment.responses.js'
 import { DocumentsService } from '../appointments/documents.service.js'
 import { CurrentUser } from '../common/current-user.decorator.js'
 import { ErrorResponse } from '../common/error-response.js'
 import { type AuthUser, Roles } from '../common/roles.js'
 import { ExamResponse, PatientResponse } from '../patients/patient.responses.js'
+import { LinkedDoctorResponse } from '../privacy/privacy.responses.js'
+import { PrivacyService } from '../privacy/privacy.service.js'
 import { MyAppointmentsQuery } from './me.query.js'
 import { AccessLogEntryResponse } from './me.responses.js'
 import { MeService } from './me.service.js'
-
-class DownloadLinkResponse {
-  @ApiProperty({ example: 'https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300' })
-  url: string
-
-  @ApiProperty({ example: '2026-10-01T14:46:00.000Z' })
-  expiresAt: string
-}
 
 @ApiTags('Paciente (app)')
 @ApiBearerAuth()
@@ -49,6 +42,7 @@ export class MeController {
     private readonly meService: MeService,
     private readonly documentsService: DocumentsService,
     private readonly config: ConfigService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   @Get('record')
@@ -86,6 +80,49 @@ export class MeController {
   @ApiOkResponse({ type: [AccessLogEntryResponse] })
   accessLog(@CurrentUser() user: AuthUser) {
     return this.meService.accessLog(user)
+  }
+
+  @Get('doctors')
+  @ApiOperation({
+    summary: 'Médicos ligados a mim e quem está bloqueado',
+    description:
+      'Quem me atendeu (ou vai atender), quem abriu o meu prontuário e quem eu bloqueei. ' +
+      'É a lista para o paciente controlar quem acessa os dados (privacidade / LGPD).',
+  })
+  @ApiOkResponse({ type: [LinkedDoctorResponse] })
+  doctors(@CurrentUser() user: AuthUser) {
+    return this.privacy.doctors(user.cpf as string)
+  }
+
+  @Put('blocked-doctors/:doctorId')
+  @ApiOperation({
+    summary: 'Bloqueia o acesso de um médico ao meu prontuário',
+    description:
+      'O médico passa a receber 403 ao abrir o prontuário, o histórico ou os documentos, e não registra ' +
+      'atendimento. Os demais médicos continuam com acesso. Repetir não dá erro.',
+  })
+  @ApiParam({ name: 'doctorId', example: '6729f1c2a3b4c5d6e7f80912' })
+  @ApiOkResponse({ type: LinkedDoctorResponse })
+  @ApiNotFoundResponse({
+    type: ErrorResponse,
+    description: 'Id que não é de médico',
+    example: { statusCode: 404, message: 'Médico não encontrado.' },
+  })
+  block(@Param('doctorId') doctorId: string, @CurrentUser() user: AuthUser) {
+    return this.privacy.block(user.cpf as string, doctorId)
+  }
+
+  @Delete('blocked-doctors/:doctorId')
+  @ApiOperation({ summary: 'Libera de novo o acesso de um médico' })
+  @ApiParam({ name: 'doctorId', example: '6729f1c2a3b4c5d6e7f80912' })
+  @ApiOkResponse({ type: LinkedDoctorResponse })
+  @ApiNotFoundResponse({
+    type: ErrorResponse,
+    description: 'Id que não é de médico',
+    example: { statusCode: 404, message: 'Médico não encontrado.' },
+  })
+  unblock(@Param('doctorId') doctorId: string, @CurrentUser() user: AuthUser) {
+    return this.privacy.unblock(user.cpf as string, doctorId)
   }
 
   @Get('appointments/:id/documents/:documentId/download')

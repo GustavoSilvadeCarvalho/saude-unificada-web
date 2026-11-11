@@ -1,0 +1,103 @@
+{
+  "cenario": "C03 - auto scaling 1 a 3",
+  "url": "https://d1yvce4t23bis0.cloudfront.net/api/auth/login",
+  "users": 20,
+  "durationSec": 600,
+  "startedAt": "2026-11-06T04:18:30.681Z",
+  "requests": 3566,
+  "requestsPerSecond": 5.94,
+  "latencyMs": {
+    "p50": 3237,
+    "p95": 6807,
+    "max": 25111
+  },
+  "errors": 43,
+  "errorRate": 1.21,
+  "statusCounts": {
+    "200": 3523,
+    "502": 43
+  },
+  "p95UltimosDoisMinutos": 4016,
+  "porMinuto": [
+    {
+      "minuto": 1,
+      "requisicoesPorSegundo": 2.63,
+      "p50": 6902,
+      "p95": 8992,
+      "erros": 3
+    },
+    {
+      "minuto": 2,
+      "requisicoesPorSegundo": 4.47,
+      "p50": 4241,
+      "p95": 8203,
+      "erros": 5
+    },
+    {
+      "minuto": 3,
+      "requisicoesPorSegundo": 5.53,
+      "p50": 3595,
+      "p95": 4989,
+      "erros": 5
+    },
+    {
+      "minuto": 4,
+      "requisicoesPorSegundo": 5.53,
+      "p50": 3599,
+      "p95": 4809,
+      "erros": 4
+    },
+    {
+      "minuto": 5,
+      "requisicoesPorSegundo": 5.68,
+      "p50": 3356,
+      "p95": 5559,
+      "erros": 6
+    },
+    {
+      "minuto": 6,
+      "requisicoesPorSegundo": 5.58,
+      "p50": 2362,
+      "p95": 6706,
+      "erros": 4
+    },
+    {
+      "minuto": 7,
+      "requisicoesPorSegundo": 5.8,
+      "p50": 2890,
+      "p95": 5917,
+      "erros": 9
+    },
+    {
+      "minuto": 8,
+      "requisicoesPorSegundo": 7.38,
+      "p50": 2490,
+      "p95": 5406,
+      "erros": 2
+    },
+    {
+      "minuto": 9,
+      "requisicoesPorSegundo": 8.25,
+      "p50": 2565,
+      "p95": 4098,
+      "erros": 3
+    },
+    {
+      "minuto": 10,
+      "requisicoesPorSegundo": 8.23,
+      "p50": 2591,
+      "p95": 4007,
+      "erros": 2
+    }
+  ],
+  "tarefasNoMaximo": 3,
+  "tarefasSaudaveisNoMaximo": 3,
+  "ambiente": {
+    "regiao": "us-east-1",
+    "tarefa": "0.25 vCPU, 512 MB (FARGATE_SPOT)",
+    "autoScaling": "CPU média com alvo de 50%, 1 a 3 tarefas",
+    "limiteDeLogin": "desligado (LOGIN_RATE_LIMIT=0)",
+    "geradorDeCarga": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz (28 núcleos), win32, Node v24.14.1",
+    "usuariosSimultaneos": 20
+  }
+}

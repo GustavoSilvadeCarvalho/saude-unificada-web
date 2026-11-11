@@ -155,6 +155,7 @@ Objeto `Appointment`:
   "status": "agendado",
   "reason": "Retorno — controle glicêmico",
   "summary": "",
+  "instructions": "Jejum de 8 horas. Trazer o resultado da HbA1c.",
   "documents": [
     { "id": "doc-1", "fileName": "receita.pdf", "type": "receita", "uploadedAt": "2026-10-01T14:40:00.000Z" }
   ]
@@ -162,6 +163,7 @@ Objeto `Appointment`:
 ```
 
 - `status`: `"realizado"` | `"agendado"`
+- `instructions` (opcional): orientações para o paciente antes do atendimento (jejum, preparo, o que levar). Aparece no app em "Próximos atendimentos".
 - `documents[].type`: `"receita"` | `"laudo"` | `"exame"` | `"outro"`
 
 Todas as rotas de atendimento são só do perfil `medico` (gestor recebe `403`).
@@ -207,6 +209,7 @@ Regras:
 - `scheduledAppointmentId` (opcional): se informado, o backend **atualiza** esse agendamento (status, data, resumo) em vez de criar outro. Sem `reason` novo, mantém o do agendamento. Com `status: "agendado"`, remarca.
 - Itens de `newAllergies`, `newMedications` e `newConditions` são **adicionados** às listas do paciente (o backend gera os `id`). `prescribedBy` vazio vira o nome do médico. CID gravado em maiúsculas.
 - Com `status: "agendado"` as três listas chegam vazias e `summary` pode ser vazio.
+- `instructions` (opcional, até 1000 caracteres): orientações para o paciente. Ao concluir ou remarcar sem enviar, mantém as do agendamento.
 - Atendimento, prontuário e auditoria são gravados numa **transação** (tudo ou nada).
 
 Regras (as mesmas do formulário do site; violá-las dá `400` com a mensagem):
@@ -238,7 +241,14 @@ Upload de receita/laudo. **`multipart/form-data`**, um arquivo por requisição 
 Resposta `201`:
 
 ```json
-{ "id": "doc-9", "fileName": "receita_amoxicilina.pdf", "type": "receita", "uploadedAt": "2026-10-01T14:41:00.000Z" }
+{
+  "id": "doc-9",
+  "fileName": "receita_amoxicilina.pdf",
+  "type": "receita",
+  "uploadedAt": "2026-10-01T14:41:00.000Z",
+  "verificationCode": "K7QM-3XRA-9DPE",
+  "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+}
 ```
 
 Regras:
@@ -247,6 +257,7 @@ Regras:
 - Até **10 MB**: acima disso, `413` "Arquivo muito grande. O limite é de 10 MB.".
 - Só o **médico do atendimento** pode enviar (`403`); até 20 documentos por atendimento.
 - Nome com acento é mantido (`laudo_cardiológico.pdf`).
+- Cada documento ganha um **código de verificação** (`verificationCode`, 12 caracteres sem I, L, O e U) e o **SHA-256** do arquivo. O site e o app mostram o código junto do documento, para quem receber a receita conferir em `GET /verify/:code`.
 - `laudo` e `exame` também geram uma entrada em `exams` do paciente (`name: "Laudo anexado"` ou `"Exame anexado"`, `result: "Ver arquivo anexado"`), com `appointmentId` e `documentId` para baixar o arquivo.
 
 ### `GET /appointments/:id/documents/:documentId/download`
@@ -262,6 +273,30 @@ Resposta `200`:
 - A `url` vale **5 minutos** e **não precisa do token**: é só abrir (`window.open(url)` no site, `Linking.openURL(url)` no app).
 - Em produção é uma URL pré-assinada do S3 (o arquivo vai direto do S3 para o usuário). Em desenvolvimento é um link assinado da própria API (`/api/files/...`).
 - `404` se o atendimento ou o documento não existir.
+
+### `GET /verify/:code` (público)
+
+Conferência de autenticidade de receita, laudo ou exame, **sem login** (ex.: na farmácia). Aceita o código em minúsculas, sem traços e com `O`/`I`/`L` no lugar de `0`/`1`.
+
+Resposta `200`:
+
+```json
+{
+  "valid": true,
+  "verificationCode": "K7QM-3XRA-9DPE",
+  "type": "receita",
+  "fileName": "receita_amoxicilina.pdf",
+  "issuedAt": "2026-10-01T14:41:00.000Z",
+  "doctorName": "Dr. Rafael Moreira Lima",
+  "doctorCrm": "CRM-SP 123456",
+  "patientInitials": "M. A. S.",
+  "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+}
+```
+
+- Mostra só as **iniciais** do paciente: nem CPF nem nome completo (LGPD).
+- O `sha256` permite conferir que o arquivo recebido não foi alterado.
+- Código inexistente ou mal digitado: `404` "Nenhum documento com esse código. Confira o código impresso no documento.".
 
 ---
 
@@ -313,7 +348,7 @@ Os indicadores e gráficos (totais, média mensal, ranking de condições, evolu
 
 ## 5. Paciente (app)
 
-O paciente entra **pelo CPF**, como no app do gov.br. O token dele só abre as rotas desta seção (`403` nas outras), e tudo é **somente leitura**: quem atualiza o prontuário é o profissional, no atendimento.
+O paciente entra **pelo CPF**, como no app do gov.br. O token dele só abre as rotas desta seção (`403` nas outras), e o prontuário é **somente leitura**: quem atualiza é o profissional, no atendimento. O que o paciente controla é **quem pode acessar** (bloqueio de médicos, abaixo).
 
 ### `POST /auth/patient-login` (público)
 
@@ -345,6 +380,24 @@ Erro: `401` "CPF ou senha inválidos." (mesma mensagem para CPF sem conta e senh
 | `GET /me/exams` | Exames e resultados | `ExamReport[]`, mais recente primeiro |
 | `GET /me/access-log` | Quem acessou meus dados (LGPD) | `[{ at, description, userName, userRole, action }]` |
 | `GET /me/appointments/:id/documents/:documentId/download` | Baixar receita/laudo | `{ url, expiresAt }` (link de 5 min, sem token) |
+| `GET /me/doctors` | Privacidade: quem pode ver meus dados | `LinkedDoctor[]`, por nome |
+| `PUT /me/blocked-doctors/:doctorId` | Bloquear um médico | `LinkedDoctor` com `blocked: true` |
+| `DELETE /me/blocked-doctors/:doctorId` | Liberar de novo | `LinkedDoctor` com `blocked: false` |
+
+#### Controle de privacidade (bloqueio de médicos)
+
+`GET /me/doctors` lista os médicos ligados ao paciente: quem atendeu (ou vai atender), quem abriu o prontuário e quem foi bloqueado.
+
+```json
+[
+  { "doctorId": "u-medico-1", "name": "Dr. Rafael Moreira Lima", "specialty": "Clínica Médica", "crm": "CRM-SP 123456", "blocked": true, "blockedAt": "2026-11-09T14:00:00.000Z" },
+  { "doctorId": "u-medico-2", "name": "Dra. Camila Rocha", "specialty": "Cardiologia", "crm": "CRM-SP 234567", "blocked": false }
+]
+```
+
+- Médico bloqueado recebe `403` "O paciente bloqueou o seu acesso a este prontuário." ao abrir o prontuário (`GET /patients/:cpf`), o histórico (`GET /appointments?patientCpf=`), anexar ou baixar documentos e registrar atendimento. A agenda dele (`?doctorId=`) continua normal.
+- Os outros médicos não são afetados. O acesso negado não entra na auditoria como acesso.
+- `PUT` repetido não dá erro. Id que não é de médico: `404` "Médico não encontrado.".
 
 Exemplo de `GET /me/access-log`:
 
@@ -373,6 +426,7 @@ Exemplo de `GET /me/access-log`:
 | `doctorId` | id do médico |
 | `reason` | motivo da consulta |
 | `summary` | resumo do atendimento |
+| `instructions` | orientações para o paciente antes do atendimento |
 | `documents` | documentos anexados |
 | `role` | perfil (`medico` \| `gestor` \| `paciente`) |
 | `specialty` | especialidade |

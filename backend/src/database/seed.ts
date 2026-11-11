@@ -7,7 +7,9 @@ import { AuditLog, AuditLogSchema } from '../audit/audit-log.schema.js'
 import { loadEnvFile } from '../common/env.js'
 import { REGIONS } from '../common/regions.js'
 import { todayDateOnly } from '../common/validators.js'
+import { newVerificationCode, sha256 } from '../common/verification.js'
 import { Patient, PatientSchema } from '../patients/patient.schema.js'
+import { AccessBlock, AccessBlockSchema } from '../privacy/access-block.schema.js'
 import { Region, RegionSchema } from '../regions/region.schema.js'
 import { RegionalStat, RegionalStatSchema } from '../regions/regional-stat.schema.js'
 import { createStorage } from '../storage/storage.factory.js'
@@ -25,6 +27,7 @@ import {
   seedPatients,
   seedUsers,
 } from './seed-data.js'
+import { DEMO_CPFS, demoAppointments, demoPatientAccounts, demoPatients, demoUsers } from './seed-demo.js'
 
 /**
  * Reaproveita o model se a conexão já tiver um (caso dos testes, que usam a conexão do Nest).
@@ -35,7 +38,7 @@ function getModel(connection: Connection, name: string, schema: Schema): Model<a
 }
 
 /** Data/hora a N dias de hoje, no horário de Brasília (UTC-3, sem horário de verão) */
-function brasiliaDateTime({ daysFromNow, hour, minute = 0 }: SeedAppointment): Date {
+function brasiliaDateTime({ daysFromNow, hour, minute = 0 }: Pick<SeedAppointment, 'daysFromNow' | 'hour' | 'minute'>): Date {
   const [year, month, day] = todayDateOnly().split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, day + daysFromNow, hour + 3, minute))
 }
@@ -49,18 +52,20 @@ const MINUTE = 60 * 1000
 async function seedDocuments(
   storage: StorageService,
   appointmentId: Types.ObjectId,
-  appointment: SeedAppointment,
+  appointment: Pick<SeedAppointment, 'documents' | 'reason'>,
   info: { patientName: string; doctorName: string; date: Date },
 ) {
   return Promise.all(
     (appointment.documents ?? []).map(async (doc) => {
       const id = new Types.ObjectId()
       const storageKey = `appointments/${appointmentId}/${id}.pdf`
+      const verificationCode = newVerificationCode()
       const body = demoPdf(`Saúde Unificada — ${doc.type.toUpperCase()}`, [
         `Paciente: ${info.patientName}`,
         `Profissional: ${info.doctorName}`,
         `Atendimento: ${appointment.reason}`,
         `Arquivo: ${doc.fileName}`,
+        `Código de verificação: ${verificationCode}`,
         '',
         'Documento fictício gerado pelo seed, apenas para demonstração.',
       ])
@@ -73,6 +78,8 @@ async function seedDocuments(
         storageKey,
         mimeType: 'application/pdf',
         size: body.length,
+        verificationCode,
+        sha256: sha256(body),
       }
     }),
   )
@@ -89,9 +96,10 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
   const auditModel = getModel(connection, AuditLog.name, AuditLogSchema)
   const regionModel = getModel(connection, Region.name, RegionSchema)
   const regionalStatModel = getModel(connection, RegionalStat.name, RegionalStatSchema)
+  const accessBlockModel = getModel(connection, AccessBlock.name, AccessBlockSchema)
   // Deixa os índices iguais aos dos schemas (ex.: e-mail e CPF únicos), apagando os antigos
   // que não existem mais. Assim um banco criado numa versão anterior continua funcionando.
-  const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel]
+  const models = [userModel, patientModel, appointmentModel, auditModel, regionModel, regionalStatModel, accessBlockModel]
   await Promise.all(models.map((model) => model.syncIndexes()))
 
   // Regiões primeiro: o cadastro de paciente é validado por elas
@@ -103,30 +111,36 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
 
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10)
   await userModel.deleteMany({})
-  const users = await userModel.insertMany(seedUsers.map((user) => ({ ...user, passwordHash })))
+  const users = await userModel.insertMany([...seedUsers, ...demoUsers].map((user) => ({ ...user, passwordHash })))
 
+  // Pacientes do seed-data (usados pelos testes) + os extras de demonstração (seed-demo)
+  const patients = [...seedPatients, ...demoPatients]
   await patientModel.deleteMany({})
-  await patientModel.insertMany(seedPatients)
+  await patientModel.insertMany(patients)
 
   // Contas do app para alguns pacientes (login por CPF, como no gov.br)
   const patientPasswordHash = await bcrypt.hash(SEED_PATIENT_PASSWORD, 10)
+  const accountCpfs = [...seedPatientAccounts.map((key) => SEED_CPFS[key]), ...demoPatientAccounts.map((key) => DEMO_CPFS[key])]
   await userModel.insertMany(
-    seedPatientAccounts.map((key) => {
-      const cpf = SEED_CPFS[key]
-      const patient = seedPatients.find((p) => p.cpf === cpf)
+    accountCpfs.map((cpf) => {
+      const patient = patients.find((p) => p.cpf === cpf)
       return { name: patient?.fullName, cpf, role: 'paciente', passwordHash: patientPasswordHash }
     }),
   )
 
   // Atendimentos: liga médico (por e-mail) e paciente (por CPF) aos registros criados acima
   const doctorByEmail = new Map(users.map((u) => [u.email, u]))
-  const patientNameByCpf = new Map(seedPatients.map((p) => [p.cpf, p.fullName]))
+  const patientNameByCpf = new Map(patients.map((p) => [p.cpf, p.fullName]))
+  const allAppointments = [
+    ...seedAppointments.map((a) => ({ ...a, patientCpf: SEED_CPFS[a.patient] as string })),
+    ...demoAppointments.map((a) => ({ ...a, patientCpf: DEMO_CPFS[a.patient] as string })),
+  ]
   await appointmentModel.deleteMany({})
   const appointments = await Promise.all(
-    seedAppointments.map(async (a) => {
+    allAppointments.map(async (a) => {
       const _id = new Types.ObjectId()
       const doctor = doctorByEmail.get(a.doctorEmail)
-      const patientCpf = SEED_CPFS[a.patient]
+      const patientCpf = a.patientCpf
       const patientName = patientNameByCpf.get(patientCpf) as string
       const date = brasiliaDateTime(a)
       // Sem armazenamento (ex.: só o banco), os atendimentos entram sem documentos
@@ -143,20 +157,22 @@ export async function runSeed(connection: Connection, options: { storage?: Stora
         status: a.status,
         reason: a.reason,
         summary: a.summary,
+        instructions: a.instructions,
         documents,
       }
     }),
   )
   await appointmentModel.insertMany(appointments)
 
-  // A trilha de auditoria começa vazia a cada seed
+  // A trilha de auditoria e os bloqueios de acesso começam vazios a cada seed
   await auditModel.deleteMany({})
+  await accessBlockModel.deleteMany({})
 
   return {
-    users: seedUsers.length,
-    patientAccounts: seedPatientAccounts.length,
-    patients: seedPatients.length,
-    appointments: seedAppointments.length,
+    users: seedUsers.length + demoUsers.length,
+    patientAccounts: accountCpfs.length,
+    patients: patients.length,
+    appointments: allAppointments.length,
     regions: REGIONS.length,
     regionalStats: regionalData.length,
   }

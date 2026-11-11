@@ -1,9 +1,12 @@
+import { todayDateOnly } from '../src/common/validators.js'
 import { SEED_CPFS } from '../src/database/seed-data.js'
 import { createTestApp, type TestContext } from './helpers.js'
 
 const DAY = 24 * 60 * 60 * 1000
 const inDays = (days: number) => new Date(Date.now() + days * DAY).toISOString()
-const today = () => new Date().toISOString().slice(0, 10)
+// "Hoje" no fuso de Brasília, igual à API. Em UTC, das 21h à meia-noite (e no CI)
+// o teste mandaria a data de amanhã e levaria 400 por "data no futuro".
+const today = todayDateOnly
 
 // CPF fictício válido que não está cadastrado
 const UNKNOWN_CPF = '12500605752'
@@ -234,10 +237,16 @@ describe('Atendimentos', () => {
         status: 'agendado',
         reason: 'Retorno — alergia alimentar',
         summary: '',
+        instructions: '  Trazer a adrenalina autoinjetável e o plano de ação.  ',
       })
 
       expect(res.status).toBe(201)
-      expect(res.body).toMatchObject({ status: 'agendado', summary: '', patientName: 'Beatriz Souza Almeida' })
+      expect(res.body).toMatchObject({
+        status: 'agendado',
+        summary: '',
+        patientName: 'Beatriz Souza Almeida',
+        instructions: 'Trazer a adrenalina autoinjetável e o plano de ação.',
+      })
     })
 
     it('responde 403 quando o doctorId não é o do médico logado', async () => {

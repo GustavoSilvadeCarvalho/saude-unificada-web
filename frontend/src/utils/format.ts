@@ -53,3 +53,9 @@ export function lastMonths(count = 12): string[] {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
 }
+
+/** Código de verificação como a pessoa digitou → "K7QM3XRA9DPE" vira "K7QM-3XRA-9DPE" */
+export function formatVerificationCode(value: string): string {
+  const clean = value.toUpperCase().replace(/[^0-9A-Z]/g, '')
+  return clean.length === 12 ? clean.match(/.{4}/g)!.join('-') : clean
+}

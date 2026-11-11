@@ -156,6 +156,16 @@ export class CreateAppointmentDto {
   @MaxLength(5000, { message: 'Resumo muito longo (máximo de 5000 caracteres).' })
   summary: string
 
+  @ApiPropertyOptional({
+    example: 'Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.',
+    description: 'Orientações para o paciente antes do atendimento: jejum, preparo, o que levar',
+  })
+  @EmptyToUndefined()
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000, { message: 'Orientações muito longas (máximo de 1000 caracteres).' })
+  instructions?: string
+
   @ApiPropertyOptional({ type: [NewAllergyDto], description: 'Adicionadas às alergias do paciente' })
   @IsOptional()
   @IsArray()

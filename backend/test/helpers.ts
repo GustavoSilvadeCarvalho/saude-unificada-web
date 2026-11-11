@@ -49,8 +49,9 @@ function withDatabase(uri: string, dbName: string) {
 /**
  * Sobe a API completa com um MongoDB em memória (replica set de 1 nó, igual ao Atlas)
  * e aplica o seed. Cada arquivo de teste chama no beforeAll e fecha no afterAll.
+ * `env` sobrescreve variáveis de ambiente (ex.: ligar o limite de tentativas de login).
  */
-export async function createTestApp(): Promise<TestContext> {
+export async function createTestApp(env: Record<string, string> = {}): Promise<TestContext> {
   const dbName = `saude-unificada-test-${randomUUID().slice(0, 8)}`
   let replSet: MongoMemoryReplSet | undefined
   if (EXTERNAL_MONGODB_URI) {
@@ -64,6 +65,11 @@ export async function createTestApp(): Promise<TestContext> {
   const uploadDir = await mkdtemp(join(tmpdir(), 'saude-unificada-uploads-'))
   process.env.STORAGE_DRIVER = 'local'
   process.env.UPLOAD_DIR = uploadDir
+  // Os testes fazem muitos logins seguidos do mesmo IP: o limite só liga no teste de segurança
+  process.env.LOGIN_RATE_LIMIT = '0'
+  process.env.LOGIN_RATE_LIMIT_IP = '0'
+  process.env.TRUST_PROXY = '0'
+  Object.assign(process.env, env)
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
   const app = moduleRef.createNestApplication({ logger: false })

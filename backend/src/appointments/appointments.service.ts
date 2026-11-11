@@ -11,6 +11,7 @@ import { AuditService } from '../audit/audit.service.js'
 import type { AuthUser } from '../common/roles.js'
 import { TransactionRunner } from '../database/transaction.runner.js'
 import { Patient } from '../patients/patient.schema.js'
+import { PrivacyService } from '../privacy/privacy.service.js'
 import { CLOCK_TOLERANCE_MS, MIN_SUMMARY_LENGTH } from './appointment.constants.js'
 import { Appointment, type AppointmentDocument } from './appointment.schema.js'
 import type { CreateAppointmentDto } from './create-appointment.dto.js'
@@ -25,6 +26,7 @@ export class AppointmentsService {
     @InjectModel(Patient.name) private readonly patientModel: Model<Patient>,
     private readonly auditService: AuditService,
     private readonly transactions: TransactionRunner,
+    private readonly privacy: PrivacyService,
   ) {}
 
   /** Agenda do médico (data crescente) ou histórico do paciente (data decrescente) */
@@ -39,6 +41,7 @@ export class AppointmentsService {
     }
 
     const cpf = patientCpf as string
+    await this.privacy.assertCanAccess(user, cpf)
     const appointments = await this.appointmentModel.find({ patientCpf: cpf }).sort({ date: -1 }).exec()
     await this.auditService.record(user, 'appointments.view', cpf)
     return appointments
@@ -53,6 +56,7 @@ export class AppointmentsService {
       throw new ForbiddenException('Você só pode registrar atendimentos em seu próprio nome.')
     }
     this.checkRules(dto)
+    await this.privacy.assertCanAccess(user, dto.patientCpf)
 
     const newAllergies = dto.newAllergies ?? []
     const newMedications = (dto.newMedications ?? []).map((m) => ({ ...m, prescribedBy: m.prescribedBy ?? user.name }))
@@ -70,6 +74,7 @@ export class AppointmentsService {
           status: dto.status,
           reason: dto.reason ?? appointment.reason,
           summary: dto.summary,
+          instructions: dto.instructions ?? appointment.instructions,
         })
         await appointment.save({ session })
       } else {
@@ -84,6 +89,7 @@ export class AppointmentsService {
               status: dto.status,
               reason: dto.reason,
               summary: dto.summary,
+              instructions: dto.instructions,
             },
           ],
           { session },

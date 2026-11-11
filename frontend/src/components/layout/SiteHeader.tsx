@@ -4,12 +4,13 @@ import { ButtonLink } from '../ui/Button'
 import { Icon } from '../ui/Icon'
 import { Logo } from './Logo'
 
+// "/#..." funciona tanto na página inicial (só rola) quanto nas outras (volta para a inicial)
 const NAV_LINKS = [
-  { href: '#proposta', label: 'Proposta' },
-  { href: '#como-funciona', label: 'Como funciona' },
-  { href: '#para-quem', label: 'Para quem é' },
-  { href: '#faq', label: 'Dúvidas' },
-  { href: '#suporte', label: 'Suporte' },
+  { href: '/#problema', label: 'O problema' },
+  { href: '/#como-funciona', label: 'Como funciona' },
+  { href: '/verificar', label: 'Conferir receita' },
+  { href: '/#faq', label: 'Dúvidas' },
+  { href: '/#suporte', label: 'Suporte' },
 ]
 
 export function SiteHeader() {
@@ -18,7 +19,7 @@ export function SiteHeader() {
   const panelLink = user ? homePathFor(user.role) : '/login'
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:rounded focus:bg-brand-700 focus:px-3 focus:py-2 focus:text-white"

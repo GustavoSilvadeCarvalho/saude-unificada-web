@@ -11,7 +11,9 @@
     "seed": "nest build && node dist/database/seed.js",
     "openapi": "nest build && node dist/openapi.js",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "vitest run --config ./vitest.config.e2e.ts"
+    "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:cov": "vitest run --config ./vitest.config.e2e.ts --coverage",
+    "test:ci": "vitest run --config ./vitest.config.e2e.ts --coverage --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml"
   },
   "engines": {
     "node": ">=20"
@@ -26,9 +28,12 @@
     "@nestjs/mongoose": "^12.0.0",
     "@nestjs/platform-express": "^12.3.3",
     "@nestjs/swagger": "^12.1.0",
+    "@nestjs/throttler": "^6.7.1",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "compression": "^1.8.2",
+    "helmet": "^8.3.0",
     "mongoose": "^9.12.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
@@ -38,14 +43,21 @@
     "@nestjs/cli": "^12.0.11",
     "@nestjs/schematics": "^12.0.12",
     "@nestjs/testing": "^12.3.3",
+    "@types/compression": "^1.8.1",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.3.0",
     "@types/node": "^22.20.5",
     "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.12",
     "mongodb-memory-server": "^11.3.0",
     "supertest": "^7.3.1",
     "tslib": "^2.9.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "@nestjs/cli": {
+      "minimatch": "^11.0.4"
+    }
   }
 }

@@ -1,0 +1,12 @@
+# Só o necessário para compilar entra no contexto do Docker (build mais rápido e sem segredos)
+node_modules
+dist
+coverage
+reports
+uploads
+test
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+npm-debug.log*

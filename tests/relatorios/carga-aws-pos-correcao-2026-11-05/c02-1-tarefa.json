@@ -1,0 +1,18 @@
+{
+  "url": "https://d1yvce4t23bis0.cloudfront.net/api/auth/login",
+  "users": 20,
+  "durationSec": 300,
+  "startedAt": "2026-11-06T02:45:38.042Z",
+  "requests": 833,
+  "requestsPerSecond": 2.78,
+  "latencyMs": {
+    "p50": 7291,
+    "p95": 8883,
+    "max": 21493
+  },
+  "errors": 0,
+  "errorRate": 0,
+  "statusCounts": {
+    "200": 833
+  }
+}

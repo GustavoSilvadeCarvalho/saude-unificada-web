@@ -17,6 +17,16 @@ export default function MeuRegistro() {
   const done = appointments?.filter((a) => a.status === 'realizado') ?? []
   const patientsCount = new Set(appointments?.map((a) => a.patientCpf)).size
 
+  // Saudação pelo horário e pelo primeiro nome, sem o "Dr."/"Dra."
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  const firstName = user.name.replace(/^Dra?\.?\s+/i, '').split(' ')[0]
+  const agenda = loading
+    ? 'Carregando sua agenda...'
+    : upcoming.length === 0
+      ? 'Nenhum atendimento marcado por enquanto.'
+      : `Você tem ${upcoming.length} ${upcoming.length === 1 ? 'atendimento marcado' : 'atendimentos marcados'}.`
+
   const profile = [
     { label: 'Nome', value: user.name },
     { label: 'E-mail', value: user.email },
@@ -30,7 +40,7 @@ export default function MeuRegistro() {
     <>
       <PageHeader
         title="Meu registro"
-        description="Seus dados profissionais e um resumo da sua agenda."
+        description={`${greeting}, ${firstName}. ${agenda}`}
         actions={
           <ButtonLink to="/medico/buscar">
             <Icon name="search" /> Buscar paciente
@@ -43,8 +53,8 @@ export default function MeuRegistro() {
           <dl className="grid gap-4 sm:grid-cols-2">
             {profile.map((item) => (
               <div key={item.label}>
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{item.label}</dt>
-                <dd className="mt-0.5 text-sm text-slate-900">{item.value || '—'}</dd>
+                <dt className="text-sm text-slate-500">{item.label}</dt>
+                <dd className="text-slate-900">{item.value || '—'}</dd>
               </div>
             ))}
           </dl>
@@ -54,18 +64,18 @@ export default function MeuRegistro() {
           {loading ? (
             <Loading />
           ) : (
-            <dl className="space-y-4">
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-600">Próximos atendimentos</dt>
-                <dd className="text-2xl font-bold text-brand-700">{upcoming.length}</dd>
+            <dl className="divide-y divide-slate-100">
+              <div className="flex items-center justify-between py-2.5 first:pt-0">
+                <dt className="text-slate-600">Próximos atendimentos</dt>
+                <dd className="text-xl font-semibold tabular-nums text-slate-900">{upcoming.length}</dd>
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-600">Atendimentos realizados</dt>
-                <dd className="text-2xl font-bold text-mint-700">{done.length}</dd>
+              <div className="flex items-center justify-between py-2.5 first:pt-0">
+                <dt className="text-slate-600">Atendimentos realizados</dt>
+                <dd className="text-xl font-semibold tabular-nums text-slate-900">{done.length}</dd>
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-sm text-slate-600">Pacientes atendidos</dt>
-                <dd className="text-2xl font-bold text-slate-800">{patientsCount}</dd>
+              <div className="flex items-center justify-between py-2.5 first:pt-0">
+                <dt className="text-slate-600">Pacientes atendidos</dt>
+                <dd className="text-xl font-semibold tabular-nums text-slate-900">{patientsCount}</dd>
               </div>
             </dl>
           )}

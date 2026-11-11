@@ -1,21 +1,26 @@
 @import "tailwindcss";
 
-/* Paleta do tema saúde: azul-petróleo (primária) e verde-água (secundária) */
+/* Paleta: verde-petróleo fechado (primária), verde-sálvia (secundária) e um
+   terracota usado só em detalhes. Fundo cor de papel em vez de cinza-azulado. */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --color-brand-50: #ecfeff;
-  --color-brand-100: #cffafe;
-  --color-brand-200: #a5f3fc;
-  --color-brand-500: #06b6d4;
-  --color-brand-600: #0891b2;
-  --color-brand-700: #0e7490;
-  --color-brand-800: #155e75;
-  --color-brand-900: #164e63;
-  --color-mint-50: #f0fdfa;
-  --color-mint-100: #ccfbf1;
-  --color-mint-500: #14b8a6;
-  --color-mint-600: #0d9488;
-  --color-mint-700: #0f766e;
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --color-brand-50: #f0f6f5;
+  --color-brand-100: #d9e9e6;
+  --color-brand-200: #b3d1cc;
+  --color-brand-500: #3d8a81;
+  --color-brand-600: #2b736b;
+  --color-brand-700: #1f5d57;
+  --color-brand-800: #194b46;
+  --color-brand-900: #143b37;
+  --color-mint-50: #f1f7f1;
+  --color-mint-100: #dcebdc;
+  --color-mint-500: #5c9b6b;
+  --color-mint-600: #457f54;
+  --color-mint-700: #366644;
+  --color-clay-500: #c0643c;
+  --color-clay-600: #a8522d;
+  --color-paper: #f8f6f1;
 }
 
 html {
@@ -23,7 +28,8 @@ html {
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  @apply bg-paper text-slate-800 antialiased;
+  font-size: 1.0625rem;
 }
 
 /* Foco visível e consistente para navegação por teclado */

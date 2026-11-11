@@ -1,0 +1,66 @@
+{
+  "cenario": "C02 - 1 tarefa fixa",
+  "url": "https://d1yvce4t23bis0.cloudfront.net/api/auth/login",
+  "users": 20,
+  "durationSec": 300,
+  "startedAt": "2026-11-06T04:13:10.243Z",
+  "requests": 859,
+  "requestsPerSecond": 2.86,
+  "latencyMs": {
+    "p50": 7086,
+    "p95": 9903,
+    "max": 22803
+  },
+  "errors": 27,
+  "errorRate": 3.14,
+  "statusCounts": {
+    "200": 832,
+    "502": 27
+  },
+  "p95UltimosDoisMinutos": 10096,
+  "porMinuto": [
+    {
+      "minuto": 1,
+      "requisicoesPorSegundo": 2.58,
+      "p50": 6901,
+      "p95": 10409,
+      "erros": 4
+    },
+    {
+      "minuto": 2,
+      "requisicoesPorSegundo": 2.82,
+      "p50": 7197,
+      "p95": 9783,
+      "erros": 2
+    },
+    {
+      "minuto": 3,
+      "requisicoesPorSegundo": 2.92,
+      "p50": 7087,
+      "p95": 9492,
+      "erros": 10
+    },
+    {
+      "minuto": 4,
+      "requisicoesPorSegundo": 2.73,
+      "p50": 7201,
+      "p95": 8803,
+      "erros": 4
+    },
+    {
+      "minuto": 5,
+      "requisicoesPorSegundo": 2.93,
+      "p50": 6901,
+      "p95": 11000,
+      "erros": 7
+    }
+  ],
+  "ambiente": {
+    "regiao": "us-east-1",
+    "tarefa": "0.25 vCPU, 512 MB (FARGATE_SPOT)",
+    "autoScaling": "CPU média com alvo de 50%, 1 a 3 tarefas",
+    "limiteDeLogin": "desligado (LOGIN_RATE_LIMIT=0)",
+    "geradorDeCarga": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz (28 núcleos), win32, Node v24.14.1",
+    "usuariosSimultaneos": 20
+  }
+}

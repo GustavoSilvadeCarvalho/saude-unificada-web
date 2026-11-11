@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 import { readFileSync } from 'node:fs'
+import { Logger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import type { OpenAPIObject } from '@nestjs/swagger'
 import { AppModule } from '../src/app.module.js'
@@ -15,6 +16,7 @@ const PUBLIC_ROUTES = [
   'POST /api/auth/patient-register',
   'GET /api/health',
   'GET /api/health/live',
+  'GET /api/verify/{code}',
 ]
 
 type Operation = {
@@ -35,12 +37,20 @@ function operations(document: OpenAPIObject) {
 
 describe('Documentação Swagger', () => {
   let document: OpenAPIObject
+  let warnings: string[]
 
   beforeAll(async () => {
+    const warn = vi.spyOn(Logger, 'warn').mockImplementation(() => undefined)
     const app = await NestFactory.create(AppModule, { preview: true, logger: false })
     app.setGlobalPrefix(API_PREFIX)
     document = buildOpenApiDocument(app)
+    warnings = warn.mock.calls.map(([message]) => String(message))
+    warn.mockRestore()
     await app.close()
+  })
+
+  it('gera a documentação sem avisos (ex.: duas classes de resposta com o mesmo nome)', () => {
+    expect(warnings).toEqual([])
   })
 
   it('documenta as rotas implementadas', () => {
@@ -51,6 +61,7 @@ describe('Documentação Swagger', () => {
         'GET /api/auth/me',
         'GET /api/health',
         'GET /api/health/live',
+  'GET /api/verify/{code}',
         'GET /api/patients/{cpf}',
         'POST /api/patients',
         'GET /api/appointments',

@@ -3,7 +3,6 @@ import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContaine
 import { PageHeader } from '../../components/layout/DashboardLayout'
 import { Alert } from '../../components/ui/Alert'
 import { Card } from '../../components/ui/Card'
-import { Icon, type IconName } from '../../components/ui/Icon'
 import { Select } from '../../components/ui/Input'
 import { Loading } from '../../components/ui/Spinner'
 import { useApi } from '../../hooks/useApi'
@@ -11,7 +10,7 @@ import { getRegionalData, getRegions } from '../../services/api'
 import { formatMonth, formatNumber, lastMonths } from '../../utils/format'
 
 // Cores dos gráficos: série única na cor primária; demais regiões em cinza quando há destaque
-const CHART_COLOR = '#0e7490'
+const CHART_COLOR = '#1f5d57'
 const MUTED_COLOR = '#cbd5e1'
 const GRID_COLOR = '#e2e8f0'
 const AXIS_TEXT = { fill: '#475569', fontSize: 12 }
@@ -19,15 +18,13 @@ const AXIS_TEXT = { fill: '#475569', fontSize: 12 }
 const MONTHS = lastMonths(12)
 const PRESETS = [3, 6, 12]
 
-function StatTile({ icon, label, value, detail }: { icon: IconName; label: string; value: string; detail?: string }) {
+/** Um número do resumo: rótulo, valor e uma linha de contexto (sem ícone, como numa planilha) */
+function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-        <Icon name={icon} className="h-5 w-5 text-brand-700" />
-        {label}
-      </div>
-      <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
-      {detail && <p className="mt-0.5 text-xs text-slate-500">{detail}</p>}
+    <div className="bg-white px-5 py-4">
+      <dt className="text-sm text-slate-500">{label}</dt>
+      <dd className={`mt-1 font-semibold leading-tight tabular-nums text-slate-900 ${/\d/.test(value) ? 'text-2xl' : 'text-xl'}`}>{value}</dd>
+      {detail && <dd className="mt-0.5 text-sm text-slate-500">{detail}</dd>}
     </div>
   )
 }
@@ -61,15 +58,15 @@ function DataTable({ caption, headers, rows }: { caption: string; headers: [stri
 function ChartCard({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
     <Card title={title}>
-      <p className="-mt-3 mb-4 text-xs text-slate-500">{description}</p>
+      <p className="-mt-1 mb-4 text-sm text-slate-500">{description}</p>
       {children}
     </Card>
   )
 }
 
 const tooltipStyle = {
-  contentStyle: { borderRadius: 8, borderColor: '#e2e8f0', fontSize: 13 },
-  cursor: { fill: 'rgba(14, 116, 144, 0.08)' },
+  contentStyle: { borderRadius: 4, borderColor: '#cbd5e1', fontSize: 13 },
+  cursor: { fill: 'rgba(31, 93, 87, 0.08)' },
   formatter: (value: unknown) => [formatNumber(Number(value)), 'Atendimentos'] as [string, string],
 }
 
@@ -142,7 +139,7 @@ export default function GestorDashboard() {
 
   return (
     <>
-      <PageHeader title="Painel regional de saúde" description="Dados agregados e anônimos de atendimentos por região de saúde de SP." />
+      <PageHeader title="Painel regional" description="Atendimentos por região de saúde de SP. São só totais: nenhum paciente aparece aqui." />
 
       {/* Filtros */}
       <Card as="div" className="mb-6">
@@ -155,7 +152,7 @@ export default function GestorDashboard() {
           />
           <Select label="De" value={from} onChange={(e) => changeFrom(e.target.value)} options={monthOptions} />
           <Select label="Até" value={to} onChange={(e) => changeTo(e.target.value)} options={monthOptions} />
-          <div role="group" aria-label="Períodos rápidos" className="flex gap-1 rounded-lg bg-slate-100 p-1 sm:col-span-2 lg:col-span-1">
+          <div role="group" aria-label="Períodos rápidos" className="flex divide-x divide-slate-300 overflow-hidden rounded-md border border-slate-300 bg-white sm:col-span-2 lg:col-span-1">
             {PRESETS.map((p) => {
               const active = from === MONTHS[MONTHS.length - p] && to === MONTHS[MONTHS.length - 1]
               return (
@@ -164,9 +161,9 @@ export default function GestorDashboard() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => applyPreset(p)}
-                  className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${active ? 'bg-white text-brand-800 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`flex-1 whitespace-nowrap px-3 py-2.5 text-sm font-medium ${active ? 'bg-brand-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
                 >
-                  {p}m
+                  {p} meses
                 </button>
               )
             })}
@@ -179,16 +176,24 @@ export default function GestorDashboard() {
         <Loading label="Carregando indicadores..." />
       ) : (
         <div aria-busy={loading} className={loading ? 'opacity-60 transition-opacity' : ''}>
-          <p className="mb-3 text-sm text-slate-600" aria-live="polite">
-            Exibindo <strong>{scopeLabel}</strong> de <strong>{periodLabel}</strong>.
+          <p className="mb-4 max-w-3xl text-slate-700" aria-live="polite">
+            De <strong>{periodLabel}</strong>, {region ? <strong>{region}</strong> : 'o conjunto das regiões'} registrou{' '}
+            <strong>{formatNumber(stats.totalAppointments)} atendimentos</strong>
+            {stats.topCondition && (
+              <>
+                , e a condição mais registrada foi <strong>{stats.topCondition.name.toLowerCase()}</strong>
+              </>
+            )}
+            .
+            {stats.variation !== null &&
+              ` No último mês, o número ${stats.variation >= 0 ? 'subiu' : 'caiu'} ${Math.abs(stats.variation).toFixed(1).replace('.', ',')}% em relação ao mês anterior.`}
           </p>
 
           {/* Indicadores */}
-          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatTile icon="activity" label="Atendimentos" value={formatNumber(stats.totalAppointments)} detail={`${stats.monthData.length} meses no período`} />
-            <StatTile icon="user" label="Pacientes atendidos" value={formatNumber(stats.totalPatients)} detail="Soma de pacientes únicos por mês" />
+          <dl className="mb-6 grid gap-px overflow-hidden rounded-lg border border-slate-300 bg-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+            <StatTile label="Atendimentos" value={formatNumber(stats.totalAppointments)} detail={`${stats.monthData.length} meses no período`} />
+            <StatTile label="Pacientes atendidos" value={formatNumber(stats.totalPatients)} detail="Soma de pacientes únicos por mês" />
             <StatTile
-              icon="calendar"
               label="Média mensal"
               value={formatNumber(stats.monthlyAverage)}
               detail={
@@ -198,12 +203,11 @@ export default function GestorDashboard() {
               }
             />
             <StatTile
-              icon="alert"
               label="Condição mais frequente"
               value={stats.topCondition?.name ?? '—'}
               detail={stats.topCondition ? `${formatNumber(stats.topCondition.value)} casos` : undefined}
             />
-          </div>
+          </dl>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <ChartCard
@@ -217,7 +221,7 @@ export default function GestorDashboard() {
                     <XAxis type="number" tick={AXIS_TEXT} tickFormatter={(v) => formatNumber(v)} axisLine={false} tickLine={false} />
                     <YAxis type="category" dataKey="name" tick={AXIS_TEXT} width={130} axisLine={false} tickLine={false} />
                     <Tooltip {...tooltipStyle} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={22}>
+                    <Bar dataKey="value" radius={0} maxBarSize={22}>
                       {stats.regionData.map((entry) => (
                         <Cell key={entry.name} fill={!region || entry.name === region ? CHART_COLOR : MUTED_COLOR} />
                       ))}
@@ -236,7 +240,7 @@ export default function GestorDashboard() {
                     <XAxis type="number" tick={AXIS_TEXT} tickFormatter={(v) => formatNumber(v)} axisLine={false} tickLine={false} />
                     <YAxis type="category" dataKey="name" tick={AXIS_TEXT} width={150} axisLine={false} tickLine={false} />
                     <Tooltip {...tooltipStyle} formatter={(value) => [formatNumber(Number(value)), 'Casos']} />
-                    <Bar dataKey="value" fill={CHART_COLOR} radius={[0, 4, 4, 0]} maxBarSize={22} />
+                    <Bar dataKey="value" fill={CHART_COLOR} radius={0} maxBarSize={22} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -253,11 +257,11 @@ export default function GestorDashboard() {
                       <YAxis tick={AXIS_TEXT} tickFormatter={(v) => formatNumber(v)} axisLine={false} tickLine={false} width={64} />
                       <Tooltip {...tooltipStyle} cursor={{ stroke: '#94a3b8', strokeDasharray: '4 4' }} />
                       <Line
-                        type="monotone"
+                        type="linear"
                         dataKey="value"
                         stroke={CHART_COLOR}
                         strokeWidth={2}
-                        dot={{ r: 4, fill: CHART_COLOR, stroke: '#fff', strokeWidth: 2 }}
+                        dot={{ r: 3, fill: CHART_COLOR, strokeWidth: 0 }}
                         activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
                       />
                     </LineChart>

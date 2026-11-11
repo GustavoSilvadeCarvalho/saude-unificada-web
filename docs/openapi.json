@@ -54,6 +54,20 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
+                }
+              }
+            }
           }
         },
         "summary": "Login de profissional de saúde ou gestor",
@@ -115,6 +129,20 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
+                }
+              }
+            }
           }
         },
         "summary": "Login do paciente no app (CPF e senha, como no gov.br)",
@@ -173,6 +201,20 @@
                 "example": {
                   "statusCode": 409,
                   "message": "Este CPF já tem conta. Use a opção Entrar."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Tentativas demais em 1 minuto (por conta e por IP)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Muitas tentativas de entrada. Aguarde 1 minuto e tente de novo."
                 }
               }
             }
@@ -1057,6 +1099,53 @@
         ]
       }
     },
+    "/api/verify/{code}": {
+      "get": {
+        "description": "Para a farmácia ou outro serviço de saúde: digite o código impresso no documento. Aceita minúsculas e sem traços. Mostra quem emitiu, quando e o SHA-256 do arquivo, mas só as iniciais do paciente (sem CPF nem nome completo).",
+        "operationId": "VerificationController_verify",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "K7QM-3XRA-9DPE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedDocumentResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Código inexistente ou mal digitado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Nenhum documento com esse código. Confira o código impresso no documento."
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confere se uma receita, laudo ou exame é autêntico (sem login)",
+        "tags": [
+          "Verificação de documentos"
+        ]
+      }
+    },
     "/api/me/record": {
       "get": {
         "description": "O prontuário do próprio paciente (mesmo formato de GET /patients/:cpf). Somente leitura.",
@@ -1298,6 +1387,222 @@
           }
         ],
         "summary": "Quem acessou o meu prontuário",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/doctors": {
+      "get": {
+        "description": "Quem me atendeu (ou vai atender), quem abriu o meu prontuário e quem eu bloqueei. É a lista para o paciente controlar quem acessa os dados (privacidade / LGPD).",
+        "operationId": "MeController_doctors",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedDoctorResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Médicos ligados a mim e quem está bloqueado",
+        "tags": [
+          "Paciente (app)"
+        ]
+      }
+    },
+    "/api/me/blocked-doctors/{doctorId}": {
+      "put": {
+        "description": "O médico passa a receber 403 ao abrir o prontuário, o histórico ou os documentos, e não registra atendimento. Os demais médicos continuam com acesso. Repetir não dá erro.",
+        "operationId": "MeController_block",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedDoctorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Id que não é de médico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Médico não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bloqueia o acesso de um médico ao meu prontuário",
+        "tags": [
+          "Paciente (app)"
+        ]
+      },
+      "delete": {
+        "operationId": "MeController_unblock",
+        "parameters": [
+          {
+            "name": "doctorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "6729f1c2a3b4c5d6e7f80912",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkedDoctorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem token, token inválido ou expirado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Faça login para continuar."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Só o perfil paciente (login por CPF) acessa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Seu perfil não tem permissão para acessar este recurso."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Id que não é de médico",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Médico não encontrado."
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Libera de novo o acesso de um médico",
         "tags": [
           "Paciente (app)"
         ]
@@ -2122,6 +2427,16 @@
           "uploadedAt": {
             "type": "string",
             "example": "2026-10-01T14:41:00.000Z"
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "K7QM-3XRA-9DPE",
+            "description": "Código para conferir a autenticidade em GET /verify/{code} (ex.: na farmácia)"
+          },
+          "sha256": {
+            "type": "string",
+            "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "description": "SHA-256 do arquivo enviado"
           }
         },
         "required": [
@@ -2173,6 +2488,11 @@
           "summary": {
             "type": "string",
             "example": "Paciente estável, glicemia em melhora. Mantida conduta."
+          },
+          "instructions": {
+            "type": "string",
+            "example": "Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.",
+            "description": "Orientações para o paciente antes do atendimento (aparece no app)"
           },
           "documents": {
             "type": "array",
@@ -2330,6 +2650,11 @@
             "example": "Paciente estável, glicemia em melhora. Mantida conduta.",
             "description": "Obrigatório (mínimo de 10 caracteres) quando realizado; pode ser vazio no agendamento"
           },
+          "instructions": {
+            "type": "string",
+            "example": "Jejum de 8 horas. Trazer os exames de sangue e a lista de remédios em uso.",
+            "description": "Orientações para o paciente antes do atendimento: jejum, preparo, o que levar"
+          },
           "newAllergies": {
             "description": "Adicionadas às alergias do paciente",
             "type": "array",
@@ -2365,16 +2690,78 @@
         "properties": {
           "url": {
             "type": "string",
-            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/...&X-Amz-Expires=300"
+            "example": "https://saude-unificada-docs.s3.sa-east-1.amazonaws.com/appointments/...&X-Amz-Expires=300",
+            "description": "Abrir direto no navegador ou no app (não precisa do token)"
           },
           "expiresAt": {
             "type": "string",
-            "example": "2026-10-01T14:46:00.000Z"
+            "example": "2026-10-01T14:46:00.000Z",
+            "description": "O link vale 5 minutos"
           }
         },
         "required": [
           "url",
           "expiresAt"
+        ]
+      },
+      "VerifiedDocumentResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "example": true
+          },
+          "verificationCode": {
+            "type": "string",
+            "example": "K7QM-3XRA-9DPE"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "laudo",
+              "exame",
+              "outro"
+            ],
+            "example": "receita"
+          },
+          "fileName": {
+            "type": "string",
+            "example": "receita_amoxicilina.pdf"
+          },
+          "issuedAt": {
+            "type": "string",
+            "example": "2026-10-01T14:41:00.000Z",
+            "description": "Quando o documento foi emitido"
+          },
+          "doctorName": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "doctorCrm": {
+            "type": "string",
+            "example": "CRM-SP 123456"
+          },
+          "patientInitials": {
+            "type": "string",
+            "example": "M. A. S.",
+            "description": "Só as iniciais do paciente (LGPD)"
+          },
+          "sha256": {
+            "type": "string",
+            "example": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+            "description": "Compare com o SHA-256 do arquivo recebido para ter certeza de que não foi alterado"
+          }
+        },
+        "required": [
+          "valid",
+          "verificationCode",
+          "type",
+          "fileName",
+          "issuedAt",
+          "doctorName",
+          "patientInitials",
+          "sha256"
         ]
       },
       "AccessLogEntryResponse": {
@@ -2413,6 +2800,41 @@
           "userName",
           "userRole",
           "action"
+        ]
+      },
+      "LinkedDoctorResponse": {
+        "type": "object",
+        "properties": {
+          "doctorId": {
+            "type": "string",
+            "example": "6729f1c2a3b4c5d6e7f80912"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dr. Rafael Moreira Lima"
+          },
+          "specialty": {
+            "type": "string",
+            "example": "Clínica Médica"
+          },
+          "crm": {
+            "type": "string",
+            "example": "CRM-SP 123456"
+          },
+          "blocked": {
+            "type": "boolean",
+            "example": false,
+            "description": "true: o médico não consegue abrir o prontuário"
+          },
+          "blockedAt": {
+            "type": "string",
+            "example": "2026-11-09T14:00:00.000Z"
+          }
+        },
+        "required": [
+          "doctorId",
+          "name",
+          "blocked"
         ]
       }
     }
