@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { PageHeader } from '../../components/layout/DashboardLayout'
 import { Alert } from '../../components/ui/Alert'
 import { Badge } from '../../components/ui/Badge'
@@ -294,7 +294,10 @@ export default function Prontuario() {
                     </span>
                     {d.verificationCode && (
                       <span className="ml-6 text-xs text-slate-500">
-                        Código de verificação: <span className="font-mono font-semibold text-slate-700">{d.verificationCode}</span>
+                        Código de verificação:{' '}
+                        <Link to={`/verificar/${d.verificationCode}`} target="_blank" className="font-mono font-semibold text-slate-700 underline-offset-2 hover:underline">
+                          {d.verificationCode}
+                        </Link>
                       </span>
                     )}
                   </span>

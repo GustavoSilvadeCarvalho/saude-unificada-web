@@ -14,6 +14,7 @@ import CadastrarPaciente from './pages/medico/CadastrarPaciente'
 import MeuRegistro from './pages/medico/MeuRegistro'
 import Prontuario from './pages/medico/Prontuario'
 import RegistrarAtendimento from './pages/medico/RegistrarAtendimento'
+import Verificar from './pages/Verificar'
 
 // O painel do gestor (com Recharts) é carregado sob demanda para deixar o bundle inicial menor
 const GestorDashboard = lazy(() => import('./pages/gestor/GestorDashboard'))
@@ -33,6 +34,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/verificar" element={<Verificar />} />
+        <Route path="/verificar/:codigo" element={<Verificar />} />
 
         <Route
           path="/medico"

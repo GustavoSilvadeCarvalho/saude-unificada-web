@@ -20,6 +20,7 @@ import type {
   Patient,
   RegionalFilters,
   RegionalRecord,
+  VerifiedDocument,
 } from '../types'
 import { onlyDigits } from '../utils/cpf'
 import { generateId } from '../utils/format'
@@ -228,6 +229,32 @@ function mockCreateAppointment(input: CreateAppointmentInput, uploads: DocumentU
 export async function getDocumentLink(appointmentId: string, documentId: string): Promise<{ url: string; expiresAt: string }> {
   if (USE_MOCK) return mockError(404, 'No modo de demonstração (mock) os arquivos não existem. Use a API para abrir documentos.')
   return request(`/appointments/${appointmentId}/documents/${documentId}/download`)
+}
+
+/** Confere uma receita ou laudo pelo código impresso (rota pública, sem login) */
+export async function verifyDocument(code: string): Promise<VerifiedDocument> {
+  const clean = code.toUpperCase().replace(/[^0-9A-Z]/g, '')
+  if (USE_MOCK) {
+    for (const a of db.appointments) {
+      const d = a.documents.find((doc) => doc.verificationCode?.replace(/-/g, '') === clean)
+      if (d) {
+        const initials = a.patientName.split(/\s+/).filter((w) => w.length > 2).map((w) => `${w[0]}.`).join(' ')
+        return mockResponse({
+          valid: true as const,
+          verificationCode: d.verificationCode!,
+          type: d.type,
+          fileName: d.fileName,
+          issuedAt: d.uploadedAt,
+          doctorName: a.doctorName,
+          doctorCrm: mockUsers.find((u) => u.id === a.doctorId)?.crm,
+          patientInitials: initials,
+          sha256: d.sha256 ?? '',
+        })
+      }
+    }
+    return mockError(404, 'Nenhum documento com esse código. Confira o código impresso no documento.')
+  }
+  return request<VerifiedDocument>(`/verify/${encodeURIComponent(clean)}`)
 }
 
 /* ---------- Pacientes ---------- */

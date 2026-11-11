@@ -125,6 +125,19 @@ export interface AttachedDocument {
   sha256?: string
 }
 
+/** Resposta pública de GET /verify/:code (só as iniciais do paciente) */
+export interface VerifiedDocument {
+  valid: true
+  verificationCode: string
+  type: DocumentType
+  fileName: string
+  issuedAt: string
+  doctorName: string
+  doctorCrm?: string
+  patientInitials: string
+  sha256: string
+}
+
 export interface Appointment {
   id: string
   patientCpf: string
