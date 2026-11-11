@@ -98,7 +98,7 @@ function ProntuarioPreview() {
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-          <span className="ml-3 truncate font-mono text-[11px] text-slate-400">/medico/paciente/123.456.789-09</span>
+          <span className="ml-3 truncate font-mono text-[11px] text-slate-400">/medico/paciente/229.169.264-02</span>
         </div>
         <div className="p-5">
           <div className="mb-4 flex items-start gap-3">
@@ -106,7 +106,7 @@ function ProntuarioPreview() {
               <p className="font-semibold text-slate-900">Maria Aparecida da Silva</p>
               <p className="text-sm text-slate-500">68 anos · última consulta há 12 dias</p>
             </div>
-            <span className="ml-auto rounded bg-red-700 px-2 py-0.5 font-mono text-sm font-bold text-white">O−</span>
+            <span className="ml-auto rounded bg-red-700 px-2 py-0.5 text-sm font-bold text-white">O−</span>
           </div>
           <div className="mb-4 border-l-4 border-red-700 bg-red-50 px-3 py-2">
             <p className="text-xs font-bold tracking-wide text-red-800">ALERGIAS</p>

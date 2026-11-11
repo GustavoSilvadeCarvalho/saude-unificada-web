@@ -71,7 +71,7 @@ export default function Prontuario() {
         <h1 className="text-lg font-semibold">Paciente não encontrado</h1>
         <p className="mt-1 text-sm text-slate-600">Não há prontuário para o CPF {maskCpf(cpf)}.</p>
         <div className="mt-4 flex gap-3">
-          <ButtonLink to={`/medico/paciente/novo?cpf=${cpf}`} variant="secondary">
+          <ButtonLink to={`/medico/paciente/novo?cpf=${cpf}`}>
             Cadastrar paciente
           </ButtonLink>
           <ButtonLink to="/medico/buscar" variant="ghost">
@@ -93,7 +93,7 @@ export default function Prontuario() {
       <PageHeader
         title="Prontuário unificado"
         actions={
-          <ButtonLink to={`/medico/paciente/${patient.cpf}/atendimento`} variant="secondary">
+          <ButtonLink to={`/medico/paciente/${patient.cpf}/atendimento`}>
             <Icon name="plus" /> Registrar atendimento
           </ButtonLink>
         }
@@ -108,15 +108,8 @@ export default function Prontuario() {
       {/* Identificação + tipo sanguíneo em destaque */}
       <Card as="div" className="mb-6">
         <div className="flex flex-wrap items-center gap-5">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-800" aria-hidden="true">
-            {patient.fullName
-              .split(' ')
-              .filter((_, i, arr) => i === 0 || i === arr.length - 1)
-              .map((n) => n[0])
-              .join('')}
-          </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold text-slate-900">{patient.fullName}</h2>
+            <h2 className="font-serif text-2xl font-bold text-slate-900">{patient.fullName}</h2>
             <p className="mt-0.5 text-sm text-slate-600">
               CPF {maskCpf(patient.cpf)} · {calculateAge(patient.birthDate)} anos ({formatDate(patient.birthDate)}) · {SEX_LABEL[patient.sex]}
             </p>
@@ -126,9 +119,9 @@ export default function Prontuario() {
               {patient.email && ` · ${patient.email}`}
             </p>
           </div>
-          <div className="rounded-xl border-2 border-red-600 bg-red-50 px-5 py-2 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-red-700">Tipo sanguíneo</p>
-            <p className="text-3xl font-extrabold text-red-700">{patient.bloodType}</p>
+          <div className="rounded-md border-2 border-red-700 px-4 py-1.5 text-center">
+            <p className="text-xs text-red-800">Tipo sanguíneo</p>
+            <p className="text-3xl font-bold text-red-700">{patient.bloodType}</p>
           </div>
         </div>
       </Card>
@@ -136,8 +129,8 @@ export default function Prontuario() {
       {/* Alergias em destaque */}
       <section
         aria-labelledby="alergias-title"
-        className={`mb-6 rounded-xl border-2 p-5 ${
-          patient.allergies.length > 0 ? 'border-red-500 bg-red-50' : 'border-mint-500/50 bg-mint-50'
+        className={`mb-6 rounded-md border border-l-[6px] p-5 ${
+          patient.allergies.length > 0 ? 'border-red-300 border-l-red-700 bg-red-50' : 'border-mint-500/40 border-l-mint-600 bg-mint-50'
         }`}
       >
         <h2 id="alergias-title" className={`flex items-center gap-2 font-bold ${patient.allergies.length > 0 ? 'text-red-800' : 'text-mint-700'}`}>
@@ -149,7 +142,7 @@ export default function Prontuario() {
         {patient.allergies.length > 0 && (
           <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {patient.allergies.map((a) => (
-              <li key={a.id} className="rounded-lg bg-white p-3 shadow-sm">
+              <li key={a.id} className="rounded border border-red-200 bg-white p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-slate-900">{a.substance}</span>
                   <Badge tone={SEVERITY_TONE[a.severity]}>{a.severity}</Badge>
@@ -245,7 +238,7 @@ export default function Prontuario() {
 
         <Card title="Resumo de atendimentos" icon={<Icon name="history" className="h-5 w-5 text-brand-700" />} className="lg:col-span-2">
           {upcoming.length > 0 && (
-            <div className="mb-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+            <div className="mb-4 border-l-4 border-brand-600 bg-brand-50 p-3 text-sm text-brand-900">
               <strong>Agendado:</strong>{' '}
               {upcoming.map((a) => `${formatDateTime(a.date)} com ${a.doctorName}`).join('; ')}
               {upcoming
@@ -305,7 +298,7 @@ export default function Prontuario() {
                     <Badge tone="brand">{d.type}</Badge>
                     enviado em {formatDateTime(d.uploadedAt)}
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       size="sm"
                       loading={opening === d.id}
                       onClick={() => openDocument(d.appointmentId, d.id)}

@@ -326,7 +326,7 @@ export default function RegistrarAtendimento() {
               {uploads.length > 0 && (
                 <ul className="mt-4 space-y-3">
                   {uploads.map((u, i) => (
-                    <li key={`${u.file.name}-${i}`} className="grid items-end gap-3 rounded-lg bg-slate-50 p-3 sm:grid-cols-[1fr_200px_auto]">
+                    <li key={`${u.file.name}-${i}`} className="grid items-end gap-3 rounded border border-slate-200 bg-paper p-3 sm:grid-cols-[1fr_200px_auto]">
                       <p className="flex items-center gap-2 self-center truncate text-sm font-medium text-slate-800">
                         <Icon name="file" className="h-4 w-4 shrink-0" /> {u.file.name}
                       </p>
@@ -349,7 +349,7 @@ export default function RegistrarAtendimento() {
           <ButtonLink to={`/medico/paciente/${patient.cpf}`} variant="ghost">
             Cancelar
           </ButtonLink>
-          <Button type="submit" variant="secondary" size="lg" loading={saving}>
+          <Button type="submit" size="lg" loading={saving}>
             {isDone ? 'Salvar atendimento' : 'Agendar atendimento'}
           </Button>
         </div>

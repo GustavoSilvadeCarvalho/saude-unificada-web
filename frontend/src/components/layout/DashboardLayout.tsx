@@ -38,18 +38,20 @@ export function DashboardLayout({ navItems, areaLabel }: DashboardLayoutProps) {
     <div className="flex h-full flex-col">
       <div className="border-b border-slate-200 px-5 py-4">
         <Logo />
-        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-mint-700">{areaLabel}</p>
+        <p className="mt-1 text-sm text-slate-500">{areaLabel}</p>
       </div>
       <nav aria-label="Menu principal" className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
+        <ul className="space-y-0.5">
           {navItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive ? 'bg-brand-50 text-brand-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  `flex items-center gap-3 border-l-[3px] px-3 py-2 text-[0.95rem] transition-colors ${
+                    isActive
+                      ? 'border-brand-700 bg-brand-50 font-semibold text-brand-900'
+                      : 'border-transparent text-slate-600 hover:border-slate-300 hover:text-slate-900'
                   }`
                 }
               >
@@ -66,7 +68,7 @@ export function DashboardLayout({ navItems, areaLabel }: DashboardLayoutProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+          className="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600 underline-offset-2 hover:text-red-700 hover:underline"
         >
           <Icon name="logout" /> Sair
         </button>
@@ -75,7 +77,7 @@ export function DashboardLayout({ navItems, areaLabel }: DashboardLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-paper">
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-2 focus:z-50 focus:rounded focus:bg-brand-700 focus:px-3 focus:py-2 focus:text-white"
@@ -135,8 +137,8 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
-        {description && <p className="mt-1 text-sm text-slate-600">{description}</p>}
+        <h1 className="font-serif text-3xl font-bold text-slate-900">{title}</h1>
+        {description && <p className="mt-1 text-slate-600">{description}</p>}
       </div>
       {actions}
     </div>
