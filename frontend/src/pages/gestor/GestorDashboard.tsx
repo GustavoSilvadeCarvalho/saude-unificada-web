@@ -11,7 +11,7 @@ import { getRegionalData, getRegions } from '../../services/api'
 import { formatMonth, formatNumber, lastMonths } from '../../utils/format'
 
 // Cores dos gráficos: série única na cor primária; demais regiões em cinza quando há destaque
-const CHART_COLOR = '#0e7490'
+const CHART_COLOR = '#1f5d57'
 const MUTED_COLOR = '#cbd5e1'
 const GRID_COLOR = '#e2e8f0'
 const AXIS_TEXT = { fill: '#475569', fontSize: 12 }

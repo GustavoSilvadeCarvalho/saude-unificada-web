@@ -31,7 +31,7 @@ const BACK_OPTIONS: ChatNode['options'] = [
 
 const FLOW: Record<NodeId, ChatNode> = {
   start: {
-    message: 'Olá! Sou o assistente do Saúde Unificada. Como posso ajudar?',
+    message: 'Oi! Escolha uma das opções abaixo. Se o seu caso não estiver aqui, a última leva ao contato do suporte.',
     options: [
       { label: 'Encontrei dados errados', next: 'wrongData' },
       { label: 'Não consigo acessar', next: 'access' },

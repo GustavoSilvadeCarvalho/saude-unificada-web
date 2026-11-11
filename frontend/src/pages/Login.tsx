@@ -57,14 +57,14 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-brand-50 via-white to-mint-50">
+    <div className="flex min-h-screen flex-col bg-paper">
       <header className="mx-auto w-full max-w-6xl px-4 py-4">
         <Logo />
       </header>
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-            <h1 className="text-2xl font-bold text-slate-900">Entrar</h1>
+          <div className="rounded-lg border border-slate-300 bg-white p-8">
+            <h1 className="font-serif text-3xl font-bold text-slate-900">Entrar</h1>
             <p className="mt-1 text-sm text-slate-600">Acesso para profissionais de saúde e gestores públicos.</p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
