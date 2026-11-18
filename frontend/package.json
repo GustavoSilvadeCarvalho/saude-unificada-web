@@ -4,6 +4,9 @@
   "description": "Front-end web da plataforma de prontuário unificado (Projeto Integrador DSM)",
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --mode api-local",
+    "dev:aws": "vite --mode api-aws",
+    "dev:mock": "vite --mode api-mock",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b"
