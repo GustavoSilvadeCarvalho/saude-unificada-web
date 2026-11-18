@@ -28,6 +28,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "start:local": "node scripts/start.mjs local",
+    "start:aws": "node scripts/start.mjs aws",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",

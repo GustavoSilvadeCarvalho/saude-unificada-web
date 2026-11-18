@@ -54,9 +54,14 @@ set instalado, `npm run dev` também funciona.)
 
 ```bash
 npm install
-copy .env.example .env     # ajuste a URL da API conforme a tabela abaixo
-npm start                  # ou: npx expo start
+npm run start:aws          # usa a API publicada na AWS
+npm run start:local        # usa a API rodando neste PC (cd backend && npm run dev:memory)
 ```
+
+Os dois comandos já passam a URL certa para o app, sem editar o `.env`. O
+`start:local` descobre o IP do PC na rede Wi-Fi e avisa se a API não responder.
+Argumentos extras vão para o Expo, ex.: `npm run start:local -- --tunnel`.
+O `npm start` continua lendo a URL do `.env` (tabela abaixo).
 
 Abra no **Expo Go (SDK 58)** escaneando o QR code do terminal, ou no emulador
 (tecla `a`), ou como prévia web (tecla `w`).
