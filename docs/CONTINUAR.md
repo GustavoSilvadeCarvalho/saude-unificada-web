@@ -82,10 +82,12 @@ Fases do manual: 1 Planejamento → 2 Implementação → 3 Nuvem → 4 Testes �
 
 ## Estado atual (commitado na `feat/backend-api`)
 
+**Atualizado em 18/11/2026:** API de volta na AWS para a gravação do vídeo e o pitch; o site e o app ganharam comandos para escolher a API (`dev:aws`/`dev:local`/`dev:mock` no site, `start:aws`/`start:local` no app). Cargas C02–C04 feitas em 06/11 (`tests/relatorios/`). Site refeito sem "cara de IA", página pública `/verificar`, app do Arthur corrigido (sessão vencida, orientações, código da receita, tela de privacidade). Documentação final em `tests/word/`.
+
 Blocos 1–4 (setup, bootstrap, login), **bloco 5** (seed, `dev:memory`, health, Swagger, base de testes), **bloco 6** (pacientes e auditoria) **bloco 7** (atendimentos), **bloco 8** (documentos com S3), **bloco 9** (painel do gestor), **bloco 10** (paciente no app, login por CPF), **bloco 11** (Docker e CI) **bloco 12** (infraestrutura AWS em `infra/`; **primeiro deploy feito em 05/11**) e **bloco 13** (`tests/`, helmet, compression, limite de login, CORS, `npm audit` zerado; faltam só as rodadas de carga na AWS) prontos. Próximos: **cenários de carga C02–C04 na AWS** (`node tests/carga/cenarios-aws.mjs`, ~35 min, depois de `npm run deploy:api -- -c loginRateLimit=false`), **bloco 14** (integração) e o **app mobile**.
 
-**AWS no ar desde 05/11/2026** (conta `060692821732`, us-east-1, usuário IAM `saude-unificada-deploy`, CLI configurada no Linux):
-- API: `https://d1yvce4t23bis0.cloudfront.net/api` (Swagger em `/api/docs`). O endereço muda se a `SaudeUnificadaApi` for destruída e criada de novo.
+**AWS no ar de novo desde 18/11/2026** (primeiro deploy em 05/11; conta `060692821732`, us-east-1, usuário IAM `saude-unificada-deploy`, CLI configurada no Linux):
+- API: `https://d2jog01y159we3.cloudfront.net/api` (Swagger em `/api/docs`). Conferido em 18/11: saúde com MongoDB `up`, login de médico e de paciente, atendimentos, `/verify` e Swagger. O endereço muda se a `SaudeUnificadaApi` for destruída e criada de novo: atualizar `frontend/.env.api-aws` e `mobile/scripts/start.mjs`.
 - Bucket: `saudeunificadadata-documents7e5b2978-f4cxv4t2uzog`. Segredos no SSM (`/saude-unificada/mongodb-uri` com a senha nova do Atlas, `/saude-unificada/jwt-secret`).
 - Seed aplicado no Atlas (banco `saude-unificada`) e no S3. Conferido: fumaça 9/9, envio e download de documento no S3 real, ALB direto → 403, HTTP → HTTPS (301), 1 tarefa Fargate Spot.
 - CORS liberado só para `http://localhost:5173`; quando o site estiver na Vercel, refazer o deploy com `-c corsOrigins="http://localhost:5173,https://SITE.vercel.app"`.

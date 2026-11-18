@@ -42,6 +42,20 @@ sem MongoDB instalado, use `npm run dev:memory`.
 
 Veja o README de cada pasta para detalhes.
 
+### Qual API o site e o app usam
+
+A API está publicada na AWS em **https://d2jog01y159we3.cloudfront.net/api** (Swagger em [`/api/docs`](https://d2jog01y159we3.cloudfront.net/api/docs)), ligada desde 18/11/2026 para a gravação e o pitch. Cada parte tem um comando para cada caso, sem precisar editar o `.env`:
+
+| Situação | Site (`frontend/`) | App (`mobile/`) |
+|---|---|---|
+| API da AWS no ar | `npm run dev:aws` | `npm run start:aws` |
+| Só a API local ligada (`cd backend && npm run dev:memory`) | `npm run dev:local` | `npm run start:local` |
+| Sem API nenhuma (dados fixos de `src/mocks`) | `npm run dev:mock` | — |
+
+- O `start:local` do app descobre sozinho o IP do computador na rede (o celular não enxerga o `localhost` do PC) e avisa se a API não responder. Celular e PC precisam estar no mesmo Wi-Fi.
+- O site precisa rodar em `http://localhost:5173`: é a única origem liberada no CORS da API.
+- Se a API da AWS for derrubada e subida de novo, o endereço do CloudFront muda. Atualize em `frontend/.env.api-aws` e em `mobile/scripts/start.mjs`.
+
 ### API sem instalar nada além do Node
 
 ```bash
@@ -61,10 +75,10 @@ cd backend && npm install && npm run dev:memory
 Terminal 2, o site apontando para ela:
 
 ```bash
-cd frontend && npm install && cp .env.example .env && npm run dev
+cd frontend && npm install && npm run dev:local
 ```
 
-No Windows (PowerShell), troque `cp` por `copy`. Abra http://localhost:5173/login: a tela mostra os usuários de teste com um botão **Preencher**. Sem o `.env`, o site usa os dados fixos de `frontend/src/mocks` e não precisa da API.
+Abra http://localhost:5173/login: a tela mostra os usuários de teste com um botão **Preencher**. Sem o `.env`, o site usa os dados fixos de `frontend/src/mocks` e não precisa da API.
 
 ### Com Docker (API + MongoDB)
 
